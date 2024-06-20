@@ -1,9 +1,10 @@
+import 'package:color_twist/component/ground.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-import 'player.dart';
+import 'component/player.dart';
 
 class TwistColorGame extends FlameGame with TapCallbacks {
   late Player player;
@@ -18,16 +19,8 @@ class TwistColorGame extends FlameGame with TapCallbacks {
 
   @override
   void onMount() {
+    world.add(Ground(position: Vector2(0, 400)));
     world.add(player = Player());
-
-    world.add(RectangleComponent(
-        position: Vector2(-100, 100), size: Vector2.all(20)));
-
-    world.add(
-        RectangleComponent(position: Vector2(100, 25), size: Vector2.all(20)));
-
-    world.add(
-        RectangleComponent(position: Vector2(220, 225), size: Vector2.all(20)));
     super.onMount();
   }
 

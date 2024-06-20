@@ -1,4 +1,4 @@
-# color_twist
+# Color Twist: A Flutter Flame Engine Game
 
 A fast-paced, color-matching challenge where players navigate obstacles by switching colors.
 

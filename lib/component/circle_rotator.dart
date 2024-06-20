@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:color_twist/twist_color_game.dart';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 
 class CircleRotator extends PositionComponent with HasGameRef<TwistColorGame> {
@@ -9,10 +10,12 @@ class CircleRotator extends PositionComponent with HasGameRef<TwistColorGame> {
     required super.position,
     required super.size,
     this.thickness = 8.0,
+    this.rotationSpeed = 2.0,
   })  : assert(size!.x == size.y),
         super(anchor: Anchor.center);
 
   final double thickness;
+  final double rotationSpeed;
 
   @override
   void onLoad() {
@@ -30,6 +33,13 @@ class CircleRotator extends PositionComponent with HasGameRef<TwistColorGame> {
         ),
       );
     }
+
+    add(
+      RotateEffect.to(
+        circle,
+        EffectController(speed: rotationSpeed, infinite: true),
+      ),
+    );
   }
 }
 

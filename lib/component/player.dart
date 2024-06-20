@@ -4,7 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 class Player extends PositionComponent with HasGameRef<TwistColorGame> {
-  Player({this.radius = 15.0});
+  Player({this.radius = 15.0, required super.position});
 
   final _velocity = Vector2.zero();
   final _gravity = 980.0;
@@ -14,7 +14,6 @@ class Player extends PositionComponent with HasGameRef<TwistColorGame> {
 
   @override
   void onMount() {
-    position = Vector2.zero();
     size = Vector2.all(radius * 2);
     anchor = Anchor.center;
     super.onMount();

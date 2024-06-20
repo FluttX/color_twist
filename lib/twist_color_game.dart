@@ -1,3 +1,4 @@
+import 'package:color_twist/component/circle_rotator.dart';
 import 'package:color_twist/component/ground.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -9,9 +10,20 @@ import 'component/player.dart';
 class TwistColorGame extends FlameGame with TapCallbacks {
   late Player player;
 
-  TwistColorGame()
-      : super(
-          camera: CameraComponent.withFixedResolution(width: 600, height: 1000),
+  final List<Color> gameColors;
+
+  TwistColorGame({
+    this.gameColors = const [
+      Colors.redAccent,
+      Colors.greenAccent,
+      Colors.blueAccent,
+      Colors.yellowAccent,
+    ],
+  }) : super(
+          camera: CameraComponent.withFixedResolution(
+            width: 600,
+            height: 1000,
+          ),
         );
 
   @override
@@ -19,8 +31,14 @@ class TwistColorGame extends FlameGame with TapCallbacks {
 
   @override
   void onMount() {
+    /// Ground line
     world.add(Ground(position: Vector2(0, 400)));
-    world.add(player = Player());
+
+    /// Player component
+    world.add(player = Player(position: Vector2(0, 300)));
+
+    /// Generating arc circle with different color and sweep
+    generateGameComponents();
     super.onMount();
   }
 
@@ -40,5 +58,11 @@ class TwistColorGame extends FlameGame with TapCallbacks {
   void onTapDown(TapDownEvent event) {
     player.jump();
     super.onTapDown(event);
+  }
+
+  void generateGameComponents() {
+    world.add(
+      CircleRotator(position: Vector2(0, 100), size: Vector2(200, 200)),
+    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:color_twist/component/circle_rotator.dart';
+import 'package:color_twist/component/color_switcher.dart';
 import 'package:color_twist/component/ground.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -7,7 +8,8 @@ import 'package:flutter/material.dart';
 
 import 'component/player.dart';
 
-class TwistColorGame extends FlameGame with TapCallbacks {
+class TwistColorGame extends FlameGame
+    with TapCallbacks, HasCollisionDetection {
   late Player player;
 
   final List<Color> gameColors;
@@ -31,22 +33,35 @@ class TwistColorGame extends FlameGame with TapCallbacks {
 
   @override
   void onMount() {
+    _initializeGame();
+    super.onMount();
+  }
+
+  _initializeGame() {
     /// Ground line
     world.add(Ground(position: Vector2(0, 400)));
 
     /// Player component
     world.add(player = Player(position: Vector2(0, 300)));
 
+    /// Change camera position to 0
+    camera.moveTo(Vector2(0, 0));
+
     /// Generating arc circle with different color and sweep
-    generateGameComponents();
-    super.onMount();
+    _generateGameComponents();
+  }
+
+  void _generateGameComponents() {
+    world.add(ColorSwitcher(position: Vector2(0, 180)));
+    world.add(
+      CircleRotator(position: Vector2(0, 0), size: Vector2(200, 200)),
+    );
   }
 
   @override
   void update(double dt) {
     final cameraY = camera.viewfinder.position.y;
     final playerY = player.position.y;
-
     if (playerY < cameraY) {
       camera.viewfinder.position = Vector2(0, playerY);
     }
@@ -60,9 +75,11 @@ class TwistColorGame extends FlameGame with TapCallbacks {
     super.onTapDown(event);
   }
 
-  void generateGameComponents() {
-    world.add(
-      CircleRotator(position: Vector2(0, 100), size: Vector2(200, 200)),
-    );
+  void gameOver() {
+    debugPrint('Game Over!');
+    for (var element in world.children) {
+      element.removeFromParent();
+    }
+    _initializeGame();
   }
 }

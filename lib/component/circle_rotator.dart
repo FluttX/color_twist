@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:color_twist/twist_color_game.dart';
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
@@ -21,10 +22,11 @@ class CircleRotator extends PositionComponent with HasGameRef<TwistColorGame> {
   void onLoad() {
     super.onLoad();
 
+    final length = gameRef.gameColors.length;
     const circle = math.pi * 2;
-    final sweep = circle / gameRef.gameColors.length;
+    final sweep = circle / length;
 
-    for (int i = 0; i < gameRef.gameColors.length; i++) {
+    for (int i = 0; i < length; i++) {
       add(
         CircleArc(
           color: gameRef.gameColors[i],
@@ -57,7 +59,36 @@ class CircleArc extends PositionComponent with ParentIsA<CircleRotator> {
   void onMount() {
     size = parent.size;
     position = size / 2;
+    _addHitBox();
     super.onMount();
+  }
+
+  void _addHitBox() {
+    final center = size / 2;
+    const precision = 8;
+
+    final segment = sweepAngle / (precision - 1);
+    final radius = size.x / 2;
+
+    List<Vector2> vertices = [];
+
+    for (int i = 0; i < precision; i++) {
+      final thisSegment = startAngle + segment * i;
+      vertices.add(
+        center + Vector2(math.cos(thisSegment), math.sin(thisSegment)) * radius,
+      );
+    }
+
+    for (int i = precision - 1; i >= 0; i--) {
+      final thisSegment = startAngle + segment * i;
+      vertices.add(
+        center +
+            Vector2(math.cos(thisSegment), math.sin(thisSegment)) *
+                (radius - parent.thickness),
+      );
+    }
+
+    add(PolygonHitbox(vertices, collisionType: CollisionType.passive));
   }
 
   @override

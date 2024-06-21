@@ -1,16 +1,32 @@
+import 'package:color_twist/component/circle_rotator.dart';
+import 'package:color_twist/component/color_switcher.dart';
 import 'package:color_twist/component/ground.dart';
 import 'package:color_twist/twist_color_game.dart';
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
 
-class Player extends PositionComponent with HasGameRef<TwistColorGame> {
-  Player({this.radius = 15.0, required super.position});
+class Player extends PositionComponent
+    with HasGameRef<TwistColorGame>, CollisionCallbacks {
+  Player({this.radius = 12.0, required super.position});
 
   final _velocity = Vector2.zero();
   final _gravity = 980.0;
   final _jumpSpeed = 350.0;
 
   final double radius;
+  Color _color = Colors.white;
+
+  @override
+  void onLoad() {
+    super.onLoad();
+    add(CircleHitbox(
+      radius: radius,
+      anchor: anchor,
+      collisionType: CollisionType.active,
+    ));
+  }
 
   @override
   void onMount() {
@@ -42,7 +58,7 @@ class Player extends PositionComponent with HasGameRef<TwistColorGame> {
     canvas.drawCircle(
       (size / 2).toOffset(),
       radius,
-      Paint()..color = Colors.yellow,
+      Paint()..color = _color,
     );
   }
 
@@ -51,5 +67,22 @@ class Player extends PositionComponent with HasGameRef<TwistColorGame> {
   /// By default [_jumpSpeed] is 350.0
   void jump() {
     _velocity.y += -_jumpSpeed;
+  }
+
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollision(intersectionPoints, other);
+    if (other is ColorSwitcher) {
+      other.removeFromParent();
+      _changePlayerColorRandomly();
+    } else if (other is CircleArc) {
+      if (_color != other.color) {
+        gameRef.gameOver();
+      }
+    }
+  }
+
+  void _changePlayerColorRandomly() {
+    _color = gameRef.gameColors.random();
   }
 }

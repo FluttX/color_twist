@@ -4,12 +4,13 @@ import 'package:color_twist/component/ground.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flame/rendering.dart';
 import 'package:flutter/material.dart';
 
 import 'component/player.dart';
 
 class TwistColorGame extends FlameGame
-    with TapCallbacks, HasCollisionDetection {
+    with TapCallbacks, HasCollisionDetection, HasDecorator, HasTimeScale {
   late Player player;
 
   final List<Color> gameColors;
@@ -30,6 +31,12 @@ class TwistColorGame extends FlameGame
 
   @override
   Color backgroundColor() => const Color(0xFF222222);
+
+  @override
+  void onLoad() {
+    decorator = PaintDecorator.blur(0);
+    super.onLoad();
+  }
 
   @override
   void onMount() {
@@ -81,5 +88,18 @@ class TwistColorGame extends FlameGame
       element.removeFromParent();
     }
     _initializeGame();
+  }
+
+  bool get isGamePaused => timeScale == 0.0;
+  bool get isGamePlaying => !isGamePaused;
+
+  void pauseGame() {
+    (decorator as PaintDecorator).addBlur(10);
+    timeScale = 0.0;
+  }
+
+  void resumeGame() {
+    (decorator as PaintDecorator).addBlur(0);
+    timeScale = 1.0;
   }
 }

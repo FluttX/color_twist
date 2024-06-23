@@ -1,6 +1,7 @@
 import 'package:color_twist/component/circle_rotator.dart';
 import 'package:color_twist/component/color_switcher.dart';
 import 'package:color_twist/component/ground.dart';
+import 'package:color_twist/component/star_component.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -13,6 +14,7 @@ class TwistColorGame extends FlameGame
     with TapCallbacks, HasCollisionDetection, HasDecorator, HasTimeScale {
   late Player player;
 
+  ValueNotifier<int> currentScore = ValueNotifier(0);
   final List<Color> gameColors;
 
   TwistColorGame({
@@ -60,8 +62,18 @@ class TwistColorGame extends FlameGame
 
   void _generateGameComponents() {
     world.add(ColorSwitcher(position: Vector2(0, 180)));
+    world.add(StarComponent(position: Vector2(0, 0)));
     world.add(
       CircleRotator(position: Vector2(0, 0), size: Vector2(200, 200)),
+    );
+
+    world.add(ColorSwitcher(position: Vector2(0, -200)));
+    world.add(StarComponent(position: Vector2(0, -400)));
+    world.add(
+      CircleRotator(position: Vector2(0, -400), size: Vector2(150, 150)),
+    );
+    world.add(
+      CircleRotator(position: Vector2(0, -400), size: Vector2(180, 180)),
     );
   }
 
@@ -72,7 +84,6 @@ class TwistColorGame extends FlameGame
     if (playerY < cameraY) {
       camera.viewfinder.position = Vector2(0, playerY);
     }
-
     super.update(dt);
   }
 
@@ -87,6 +98,7 @@ class TwistColorGame extends FlameGame
     for (var element in world.children) {
       element.removeFromParent();
     }
+    currentScore.value = 0;
     _initializeGame();
   }
 
@@ -101,5 +113,9 @@ class TwistColorGame extends FlameGame
   void resumeGame() {
     (decorator as PaintDecorator).addBlur(0);
     timeScale = 1.0;
+  }
+
+  void increaseScore() {
+    currentScore.value++;
   }
 }

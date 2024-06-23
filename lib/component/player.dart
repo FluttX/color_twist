@@ -1,6 +1,7 @@
 import 'package:color_twist/component/circle_rotator.dart';
 import 'package:color_twist/component/color_switcher.dart';
 import 'package:color_twist/component/ground.dart';
+import 'package:color_twist/component/star_component.dart';
 import 'package:color_twist/twist_color_game.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -9,7 +10,7 @@ import 'package:flutter/material.dart';
 
 class Player extends PositionComponent
     with HasGameRef<TwistColorGame>, CollisionCallbacks {
-  Player({this.radius = 12.0, required super.position});
+  Player({this.radius = 12.0, required super.position}) : super(priority: 20);
 
   final _velocity = Vector2.zero();
   final _gravity = 980.0;
@@ -79,6 +80,9 @@ class Player extends PositionComponent
       if (_color != other.color) {
         gameRef.gameOver();
       }
+    } else if (other is StarComponent) {
+      other.showCollectEffect();
+      gameRef.increaseScore();
     }
   }
 

@@ -33,13 +33,29 @@ class _HomeScreenState extends State<HomeScreen> {
             SafeArea(
               child: Align(
                 alignment: Alignment.topLeft,
-                child: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _twistColorGame.pauseGame();
-                    });
-                  },
-                  icon: const Icon(Icons.pause),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _twistColorGame.pauseGame();
+                        });
+                      },
+                      icon: const Icon(Icons.pause),
+                    ),
+                    ValueListenableBuilder<int>(
+                      valueListenable: _twistColorGame.currentScore,
+                      builder: (context, value, child) {
+                        return Text(
+                          '$value',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

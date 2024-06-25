@@ -6,6 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/rendering.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 
 import 'component/player.dart';
@@ -37,6 +38,7 @@ class TwistColorGame extends FlameGame
   @override
   void onLoad() {
     decorator = PaintDecorator.blur(0);
+    FlameAudio.bgm.initialize();
     super.onLoad();
   }
 
@@ -47,17 +49,14 @@ class TwistColorGame extends FlameGame
   }
 
   _initializeGame() {
-    /// Ground line
     world.add(Ground(position: Vector2(0, 400)));
-
-    /// Player component
     world.add(player = Player(position: Vector2(0, 300)));
 
-    /// Change camera position to 0
     camera.moveTo(Vector2(0, 0));
 
-    /// Generating arc circle with different color and sweep
     _generateGameComponents();
+
+    FlameAudio.bgm.play('background.mp3');
   }
 
   void _generateGameComponents() {
@@ -94,6 +93,7 @@ class TwistColorGame extends FlameGame
   }
 
   void gameOver() {
+    FlameAudio.bgm.stop();
     debugPrint('Game Over!');
     for (var element in world.children) {
       element.removeFromParent();
@@ -106,11 +106,13 @@ class TwistColorGame extends FlameGame
   bool get isGamePlaying => !isGamePaused;
 
   void pauseGame() {
+    FlameAudio.bgm.pause();
     (decorator as PaintDecorator).addBlur(10);
     timeScale = 0.0;
   }
 
   void resumeGame() {
+    FlameAudio.bgm.resume();
     (decorator as PaintDecorator).addBlur(0);
     timeScale = 1.0;
   }

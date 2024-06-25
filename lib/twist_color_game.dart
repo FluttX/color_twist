@@ -4,6 +4,7 @@ import 'package:color_twist/component/ground.dart';
 import 'package:color_twist/component/star_component.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_audio/flame_audio.dart';
@@ -15,6 +16,7 @@ class TwistColorGame extends FlameGame
     with TapCallbacks, HasCollisionDetection, HasDecorator, HasTimeScale {
   late Player player;
 
+  ValueNotifier<bool> isGameOver = ValueNotifier(false);
   ValueNotifier<int> currentScore = ValueNotifier(0);
   final List<Color> gameColors;
 
@@ -36,10 +38,12 @@ class TwistColorGame extends FlameGame
   Color backgroundColor() => const Color(0xFF222222);
 
   @override
-  void onLoad() {
+  Future<void> onLoad() async {
+    await super.onLoad();
     decorator = PaintDecorator.blur(0);
     FlameAudio.bgm.initialize();
-    super.onLoad();
+    await Flame.images.loadAll(['star_icon.png', 'finger_tap.png']);
+    await FlameAudio.audioCache.loadAll(['background.mp3', 'collect.wav']);
   }
 
   @override
@@ -49,6 +53,8 @@ class TwistColorGame extends FlameGame
   }
 
   _initializeGame() {
+    isGameOver.value = false;
+
     world.add(Ground(position: Vector2(0, 400)));
     world.add(player = Player(position: Vector2(0, 300)));
 
@@ -94,16 +100,19 @@ class TwistColorGame extends FlameGame
 
   void gameOver() {
     FlameAudio.bgm.stop();
-    debugPrint('Game Over!');
     for (var element in world.children) {
       element.removeFromParent();
     }
-    currentScore.value = 0;
-    _initializeGame();
+    isGameOver.value = true;
   }
 
   bool get isGamePaused => timeScale == 0.0;
   bool get isGamePlaying => !isGamePaused;
+
+  void playAgain() {
+    currentScore.value = 0;
+    _initializeGame();
+  }
 
   void pauseGame() {
     FlameAudio.bgm.pause();

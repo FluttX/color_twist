@@ -39,7 +39,7 @@ class StarComponent extends PositionComponent with CollisionCallbacks {
         position: position,
         particle: Particle.generate(
           count: 30,
-          lifespan: 1,
+          lifespan: 0.8,
           generator: (i) {
             return AcceleratedParticle(
               speed: randomVector(),
@@ -50,7 +50,7 @@ class StarComponent extends PositionComponent with CollisionCallbacks {
                   renderer: (canvas, particle) {
                     _starSprite.render(
                       canvas,
-                      size: (size / 2) * (1 - particle.progress),
+                      size: size * (1 - particle.progress),
                       anchor: Anchor.center,
                       overridePaint: Paint()
                         ..color = Colors.white.withOpacity(

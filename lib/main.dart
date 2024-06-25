@@ -30,34 +30,48 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           GameWidget(game: _twistColorGame),
           if (_twistColorGame.isGamePlaying)
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _twistColorGame.pauseGame();
-                        });
-                      },
-                      icon: const Icon(Icons.pause),
+            ValueListenableBuilder<bool>(
+              valueListenable: _twistColorGame.isGameOver,
+              builder: (context, isGameOver, child) {
+                if (isGameOver) {
+                  return const SizedBox();
+                } else {
+                  return SafeArea(
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _twistColorGame.pauseGame();
+                              });
+                            },
+                            icon: const Icon(Icons.pause),
+                          ),
+                          ValueListenableBuilder<int>(
+                            valueListenable: _twistColorGame.currentScore,
+                            builder: (context, value, child) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
+                                child: Text(
+                                  'Score: $value',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    ValueListenableBuilder<int>(
-                      valueListenable: _twistColorGame.currentScore,
-                      builder: (context, value, child) {
-                        return Text(
-                          '$value',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
+                  );
+                }
+              },
             ),
           if (_twistColorGame.isGamePaused)
             Container(
@@ -85,7 +99,50 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            )
+            ),
+          ValueListenableBuilder<bool>(
+            valueListenable: _twistColorGame.isGameOver,
+            builder: (context, isGameOver, child) {
+              if (isGameOver) {
+                return Container(
+                  color: Colors.black45,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Game Over',
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                        SizedBox(
+                          height: 140,
+                          width: 140,
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _twistColorGame.playAgain();
+                              });
+                            },
+                            icon: const Icon(Icons.play_arrow, size: 100),
+                          ),
+                        ),
+                        Text(
+                          'Play Again',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Your Score: ${_twistColorGame.currentScore.value}',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
         ],
       ),
     );

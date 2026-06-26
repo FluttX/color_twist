@@ -26,9 +26,13 @@ class InfiniteLevelController {
   double _frontierY = 0;
   bool _seeded = false;
 
-  static const _spawnAheadMultiplier = 1.2;
-  static const _despawnBehindMultiplier = 0.6;
-  static const _initialPatternCount = 3;
+  /// How far above the visible top edge to place the next pattern.
+  static const _spawnAboveViewport = 180.0;
+  static const _despawnBelowViewport = 0.5;
+  static const _maxPatternsPerTick = 2;
+
+  static double cameraTopY(double cameraY) =>
+      cameraY - GameConstants.cameraHeight / 2;
 
   void reset() {
     for (final obstacle in _activeObstacles.toList()) {
@@ -40,7 +44,7 @@ class InfiniteLevelController {
     patternGenerator.reset();
   }
 
-  void seedInitial(double playerY) {
+  void seedInitial(double playerY, double cameraY) {
     reset();
 
     final switcher = patternGenerator.initialColorSwitcher(playerY);
@@ -48,25 +52,31 @@ class InfiniteLevelController {
 
     _frontierY = playerY - patternGenerator.frontierBelowSwitcher;
     final difficulty = difficultyManager.snapshotForScore(0);
-
-    for (var i = 0; i < _initialPatternCount; i++) {
-      _spawnNextPattern(difficulty, 0);
-    }
+    _fillViewportTop(cameraY, difficulty, 0);
 
     _seeded = true;
   }
 
-  void tick(double playerY, int score) {
+  void tick(double playerY, double cameraY, int score) {
     if (!_seeded) return;
 
     final difficulty = difficultyManager.snapshotForScore(score);
-    final spawnAhead = GameConstants.cameraHeight * _spawnAheadMultiplier;
-
-    while (_frontierY > playerY - spawnAhead) {
-      _spawnNextPattern(difficulty, score);
-    }
-
+    _fillViewportTop(cameraY, difficulty, score);
     _despawnBehind(playerY);
+  }
+
+  void _fillViewportTop(
+    double cameraY,
+    DifficultySnapshot difficulty,
+    int score,
+  ) {
+    final spawnLine = cameraTopY(cameraY) - _spawnAboveViewport;
+    var spawned = 0;
+
+    while (_frontierY > spawnLine && spawned < _maxPatternsPerTick) {
+      _spawnNextPattern(difficulty, score);
+      spawned++;
+    }
   }
 
   void _spawnNextPattern(DifficultySnapshot difficulty, int score) {
@@ -104,7 +114,7 @@ class InfiniteLevelController {
 
   void _despawnBehind(double playerY) {
     final despawnLine =
-        playerY + GameConstants.cameraHeight * _despawnBehindMultiplier;
+        playerY + GameConstants.cameraHeight * _despawnBelowViewport;
 
     final toRemove = _activeObstacles
         .where((obs) => obs.position.y > despawnLine)

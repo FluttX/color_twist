@@ -7,27 +7,37 @@ class PauseOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black45,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'PAUSED!',
-              style: Theme.of(context).textTheme.headlineLarge,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(color: Colors.black45),
+        const Center(
+          child: Text(
+            'PAUSED!',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-            SizedBox(
-              height: 140,
-              width: 140,
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          child: SafeArea(
+            bottom: false,
+            right: false,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
               child: IconButton(
                 onPressed: context.read<GameCubit>().resume,
-                icon: const Icon(Icons.play_arrow, size: 100),
+                icon: const Icon(Icons.play_arrow, size: 28),
+                tooltip: 'Resume',
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

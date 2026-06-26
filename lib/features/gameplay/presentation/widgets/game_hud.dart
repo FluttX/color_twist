@@ -10,48 +10,62 @@ class GameHud extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<GameCubit>();
 
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              onPressed: cubit.pause,
-              icon: const Icon(Icons.pause),
-            ),
-            BlocBuilder<GameCubit, GameState>(
-              buildWhen: (previous, current) =>
-                  previous.score != current.score ||
-                  previous.highScore != current.highScore,
-              builder: (context, state) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Score: ${state.score}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      if (state.highScore > 0)
-                        Text(
-                          'Best: ${state.highScore}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white70,
-                              ),
-                        ),
-                    ],
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: cubit.pause,
+                    icon: const Icon(Icons.pause, size: 28),
+                    tooltip: 'Pause',
                   ),
-                );
-              },
+                  const Spacer(),
+                  BlocBuilder<GameCubit, GameState>(
+                    buildWhen: (previous, current) =>
+                        previous.score != current.score ||
+                        previous.highScore != current.highScore,
+                    builder: (context, state) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Score: ${state.score}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            if (state.highScore > 0)
+                              Text(
+                                'Best: ${state.highScore}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: Colors.white70),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

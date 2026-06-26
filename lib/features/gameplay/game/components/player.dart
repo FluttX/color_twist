@@ -1,5 +1,4 @@
 import 'package:color_twist/features/gameplay/game/components/circle_rotator.dart';
-import 'package:color_twist/features/gameplay/game/components/color_switcher.dart';
 import 'package:color_twist/features/gameplay/game/components/player_trail.dart';
 import 'package:color_twist/features/gameplay/game/components/star_component.dart';
 import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
@@ -13,7 +12,11 @@ class Player extends PositionComponent
   Player({
     this.radius = 12.0,
     required super.position,
-  }) : super(priority: 20);
+  }) : super(
+          priority: 20,
+          anchor: Anchor.center,
+          size: Vector2.all(24),
+        );
 
   final _velocity = Vector2.zero();
 
@@ -47,17 +50,9 @@ class Player extends PositionComponent
     super.onLoad();
     add(CircleHitbox(
       radius: radius,
-      anchor: anchor,
       collisionType: CollisionType.active,
     ));
     game.world.add(PlayerTrail(player: this));
-  }
-
-  @override
-  void onMount() {
-    size = Vector2.all(radius * 2);
-    anchor = Anchor.center;
-    super.onMount();
   }
 
   @override
@@ -65,18 +60,17 @@ class Player extends PositionComponent
     super.update(dt);
     _updateSquashStretch(dt);
 
-    final ground = game.ground;
     final wasOnGround = _isOnGround;
 
     position += _velocity * dt;
 
     final bottomY = positionOfAnchor(Anchor.bottomCenter).y;
-    if (bottomY > ground.position.y) {
+    if (game.ground.isMounted && bottomY > game.ground.position.y) {
       if (!wasOnGround && _velocity.y > 0) {
         _triggerLandingSquash();
       }
       _velocity.setValues(0, 0);
-      position = Vector2(0, ground.position.y - (height / 2));
+      position = Vector2(0, game.ground.position.y - (height / 2));
       _isOnGround = true;
     } else {
       _velocity.y += _gravity * dt;
@@ -144,8 +138,12 @@ class Player extends PositionComponent
   }
 
   void jump() {
-    _velocity.y += -_jumpSpeed;
+    _velocity.y = -_jumpSpeed;
     _triggerJumpStretch();
+  }
+
+  void applyRandomColor() {
+    _changePlayerColorRandomly();
   }
 
   @override
@@ -154,20 +152,6 @@ class Player extends PositionComponent
     PositionComponent other,
   ) {
     super.onCollisionStart(intersectionPoints, other);
-
-    final switcher = _resolveColorSwitcher(other);
-    if (switcher != null) {
-      final switcherPosition = switcher.position.clone();
-      _changePlayerColorRandomly();
-      game.releaseObstacle(switcher);
-      game.particleEffects.playColorSwitch(
-        switcherPosition,
-        _color,
-        game.gameColors,
-      );
-      game.shakeScreen();
-      return;
-    }
 
     if (other is CircleArc) {
       if (_color != other.color) {
@@ -185,12 +169,6 @@ class Player extends PositionComponent
       game.audioService.playCollectSound();
       game.hapticService.onCollect();
     }
-  }
-
-  ColorSwitcher? _resolveColorSwitcher(PositionComponent other) {
-    if (other is ColorSwitcher) return other;
-    if (other.parent is ColorSwitcher) return other.parent as ColorSwitcher;
-    return null;
   }
 
   void _changePlayerColorRandomly() {

@@ -1,5 +1,6 @@
 import 'package:color_twist/features/gameplay/game/components/circle_rotator.dart';
 import 'package:color_twist/features/gameplay/game/components/color_switcher.dart';
+import 'package:color_twist/features/gameplay/game/components/player_trail.dart';
 import 'package:color_twist/features/gameplay/game/components/star_component.dart';
 import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
 import 'package:flame/collisions.dart';
@@ -19,6 +20,25 @@ class Player extends PositionComponent
   final double radius;
   Color _color = Colors.white;
 
+  bool _isOnGround = true;
+
+  double _scaleX = 1.0;
+  double _scaleY = 1.0;
+  double _squashTimer = 0;
+  double _squashDuration = 0;
+  double _targetScaleX = 1.0;
+  double _targetScaleY = 1.0;
+
+  static const _jumpStretchX = 0.82;
+  static const _jumpStretchY = 1.18;
+  static const _jumpStretchDuration = 0.12;
+  static const _landSquashX = 1.25;
+  static const _landSquashY = 0.75;
+  static const _landSquashDuration = 0.10;
+
+  Color get currentColor => _color;
+  bool get isOnGround => _isOnGround;
+
   double get _gravity => game.config.gravity;
   double get _jumpSpeed => game.config.jumpSpeed;
 
@@ -30,6 +50,7 @@ class Player extends PositionComponent
       anchor: anchor,
       collisionType: CollisionType.active,
     ));
+    game.world.add(PlayerTrail(player: this));
   }
 
   @override
@@ -42,30 +63,89 @@ class Player extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    position += _velocity * dt;
+    _updateSquashStretch(dt);
 
     final ground = game.ground;
+    final wasOnGround = _isOnGround;
 
-    if (positionOfAnchor(Anchor.bottomCenter).y > ground.position.y) {
+    position += _velocity * dt;
+
+    final bottomY = positionOfAnchor(Anchor.bottomCenter).y;
+    if (bottomY > ground.position.y) {
+      if (!wasOnGround && _velocity.y > 0) {
+        _triggerLandingSquash();
+      }
       _velocity.setValues(0, 0);
       position = Vector2(0, ground.position.y - (height / 2));
+      _isOnGround = true;
     } else {
       _velocity.y += _gravity * dt;
+      _isOnGround = false;
     }
+  }
+
+  void _updateSquashStretch(double dt) {
+    if (_squashTimer > 0) {
+      _squashTimer -= dt;
+      final t = (_squashTimer / _squashDuration).clamp(0.0, 1.0);
+      _scaleX = _lerp(_targetScaleX, 1.0, 1 - t);
+      _scaleY = _lerp(_targetScaleY, 1.0, 1 - t);
+    } else {
+      _scaleX = 1.0;
+      _scaleY = 1.0;
+    }
+  }
+
+  double _lerp(double from, double to, double t) => from + (to - from) * t;
+
+  void _triggerJumpStretch() {
+    _targetScaleX = _jumpStretchX;
+    _targetScaleY = _jumpStretchY;
+    _squashDuration = _jumpStretchDuration;
+    _squashTimer = _jumpStretchDuration;
+    _scaleX = _targetScaleX;
+    _scaleY = _targetScaleY;
+  }
+
+  void _triggerLandingSquash() {
+    _targetScaleX = _landSquashX;
+    _targetScaleY = _landSquashY;
+    _squashDuration = _landSquashDuration;
+    _squashTimer = _landSquashDuration;
+    _scaleX = _targetScaleX;
+    _scaleY = _targetScaleY;
   }
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
+    final center = (size / 2).toOffset();
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.scale(_scaleX, _scaleY);
+    canvas.translate(-center.dx, -center.dy);
+
     canvas.drawCircle(
-      (size / 2).toOffset(),
+      center,
+      radius * 1.5,
+      Paint()
+        ..color = _color.withValues(alpha: 0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
+
+    canvas.drawCircle(
+      center,
       radius,
       Paint()..color = _color,
     );
+
+    canvas.restore();
   }
 
   void jump() {
     _velocity.y += -_jumpSpeed;
+    _triggerJumpStretch();
   }
 
   @override
@@ -74,6 +154,7 @@ class Player extends PositionComponent
     if (other is ColorSwitcher) {
       other.removeFromParent();
       _changePlayerColorRandomly();
+      game.shakeScreen();
     } else if (other is CircleArc) {
       if (_color != other.color) {
         game.gameOver();
@@ -82,6 +163,7 @@ class Player extends PositionComponent
       other.showCollectEffect();
       game.increaseScore();
       game.audioService.playCollectSound();
+      game.hapticService.onCollect();
     }
   }
 

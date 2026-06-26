@@ -8,6 +8,7 @@ import 'package:color_twist/features/gameplay/data/levels/default_level.dart';
 import 'package:color_twist/features/gameplay/game/components/color_switcher.dart';
 import 'package:color_twist/features/gameplay/game/components/ground.dart';
 import 'package:color_twist/features/gameplay/game/components/player.dart';
+import 'package:color_twist/features/gameplay/game/components/star_component.dart';
 import 'package:color_twist/features/gameplay/game/generation/difficulty_manager.dart';
 import 'package:color_twist/features/gameplay/game/generation/infinite_level_controller.dart';
 import 'package:color_twist/features/gameplay/game/generation/obstacle_factory.dart';
@@ -172,6 +173,17 @@ class TwistColorGame extends FlameGame
       gameColors,
     );
     shakeScreen(intensity: 3.0);
+  }
+
+  void collectStar(StarComponent star) {
+    if (!star.isMounted || star.isCollected) return;
+
+    star.markCollected();
+    particleEffects.playStarCollect(star.position);
+    releaseObstacle(star);
+    increaseScore();
+    audioService.playCollectSound();
+    hapticService.onCollect();
   }
 
   void shakeScreen({double intensity = 4.0, double duration = 0.15}) {

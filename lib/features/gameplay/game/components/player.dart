@@ -1,6 +1,6 @@
 import 'package:color_twist/features/gameplay/game/components/circle_rotator.dart';
+import 'package:color_twist/features/gameplay/game/components/color_switcher.dart';
 import 'package:color_twist/features/gameplay/game/components/player_trail.dart';
-import 'package:color_twist/features/gameplay/game/components/star_component.dart';
 import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -163,12 +163,21 @@ class Player extends PositionComponent
           game.incrementCombo();
         }
       }
-    } else if (other is StarComponent) {
-      other.showCollectEffect();
-      game.increaseScore();
-      game.audioService.playCollectSound();
-      game.hapticService.onCollect();
+      return;
     }
+
+    final switcher = _resolveColorSwitcher(other);
+    if (switcher != null) {
+      game.collectColorSwitcher(switcher);
+    }
+  }
+
+  ColorSwitcher? _resolveColorSwitcher(PositionComponent other) {
+    if (other is ColorSwitcher) return other;
+    if (other.parent is ColorSwitcher) {
+      return other.parent as ColorSwitcher;
+    }
+    return null;
   }
 
   void _changePlayerColorRandomly() {

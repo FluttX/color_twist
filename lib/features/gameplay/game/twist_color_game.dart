@@ -2,10 +2,12 @@ import 'dart:math';
 
 import 'package:color_twist/core/constants/asset_paths.dart';
 import 'package:color_twist/core/constants/game_constants.dart';
+import 'package:color_twist/core/services/score_service.dart';
 import 'package:color_twist/features/gameplay/data/level_loader.dart';
 import 'package:color_twist/features/gameplay/data/levels/default_level.dart';
 import 'package:color_twist/features/gameplay/game/components/ground.dart';
 import 'package:color_twist/features/gameplay/game/components/player.dart';
+import 'package:color_twist/features/gameplay/game/particles/particle_effects.dart';
 import 'package:color_twist/features/gameplay/models/game_config.dart';
 import 'package:color_twist/features/gameplay/models/level_definition.dart';
 import 'package:color_twist/services/audio_service.dart';
@@ -27,8 +29,10 @@ class TwistColorGame extends FlameGame
     this.levelLoader = const LevelLoader(),
     AudioService? audioService,
     HapticService? hapticService,
+    ScoreService? scoreService,
   })  : audioService = audioService ?? AudioService(),
         hapticService = hapticService ?? HapticService(),
+        scoreService = scoreService ?? ScoreService(),
         super(
           camera: CameraComponent.withFixedResolution(
             width: GameConstants.cameraWidth,
@@ -37,17 +41,21 @@ class TwistColorGame extends FlameGame
         );
 
   final void Function(int score) onScoreChanged;
-  final VoidCallback onGameOver;
+  final void Function(int score, {required bool isNewHighScore}) onGameOver;
   final GameConfig config;
   final LevelDefinition level;
   final LevelLoader levelLoader;
   final AudioService audioService;
   final HapticService hapticService;
+  final ScoreService scoreService;
 
   late Player player;
   late Ground ground;
+  late ParticleEffects particleEffects;
 
   int _score = 0;
+  int _combo = 0;
+  bool _isGameOver = false;
   double _shakeDuration = 0;
   double _shakeIntensity = 0;
   final _rnd = Random();
@@ -68,7 +76,9 @@ class TwistColorGame extends FlameGame
     await super.onLoad();
     decorator = PaintDecorator.blur(0);
     await audioService.initialize();
+    await scoreService.initialize();
     await Flame.images.loadAll(AssetPaths.images);
+    add(particleEffects = ParticleEffects());
   }
 
   @override
@@ -79,6 +89,8 @@ class TwistColorGame extends FlameGame
 
   void _initializeGame() {
     _score = 0;
+    _combo = 0;
+    _isGameOver = false;
     _shakeDuration = 0;
     _shakeIntensity = 0;
     _cameraTargetY = 0;
@@ -143,19 +155,47 @@ class TwistColorGame extends FlameGame
 
   @override
   void onTapDown(TapDownEvent event) {
+    if (_isGameOver) return;
     player.jump();
     hapticService.onJump();
     _triggerCameraBounce();
     super.onTapDown(event);
   }
 
-  void gameOver() {
+  void incrementCombo() {
+    _combo++;
+    if (_isComboMilestone(_combo)) {
+      particleEffects.playPerfectCombo(player.position.clone(), _combo);
+    }
+  }
+
+  bool _isComboMilestone(int combo) {
+    if (combo == 3 || combo == 5 || combo == 10) return true;
+    return combo > 10 && combo % 5 == 0;
+  }
+
+  Future<void> gameOver() async {
+    if (_isGameOver) return;
+    _isGameOver = true;
+
+    final pos = player.position.clone();
+    final color = player.currentColor;
+    final isNewHigh = await scoreService.trySaveHighScore(_score);
+
+    particleEffects.playGameOverExplosion(pos, color);
+    if (isNewHigh) {
+      particleEffects.playNewHighScore();
+    }
+
     hapticService.onGameOver();
     audioService.stopBackgroundMusic();
-    for (final element in world.children) {
-      element.removeFromParent();
+
+    await Future<void>.delayed(const Duration(milliseconds: 450));
+
+    for (final child in world.children.toList()) {
+      child.removeFromParent();
     }
-    onGameOver();
+    onGameOver(_score, isNewHighScore: isNewHigh);
   }
 
   void playAgain() {

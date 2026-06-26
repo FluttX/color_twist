@@ -1,12 +1,11 @@
-import 'dart:math';
-
 import 'package:color_twist/core/constants/asset_paths.dart';
+import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
 
-class StarComponent extends PositionComponent with CollisionCallbacks {
+class StarComponent extends PositionComponent
+    with CollisionCallbacks, HasGameReference<TwistColorGame> {
   StarComponent({required super.position})
       : super(size: Vector2(28, 28), anchor: Anchor.center);
 
@@ -32,40 +31,7 @@ class StarComponent extends PositionComponent with CollisionCallbacks {
   }
 
   void showCollectEffect() {
-    final rnd = Random();
-    Vector2 randomVector() => (Vector2.random(rnd) - Vector2.random(rnd)) * 80;
-    parent?.add(
-      ParticleSystemComponent(
-        position: position,
-        particle: Particle.generate(
-          count: 30,
-          lifespan: 0.8,
-          generator: (i) {
-            return AcceleratedParticle(
-              speed: randomVector(),
-              acceleration: randomVector(),
-              child: RotatingParticle(
-                to: rnd.nextDouble() * pi * 2,
-                child: ComputedParticle(
-                  renderer: (canvas, particle) {
-                    _starSprite.render(
-                      canvas,
-                      size: size * (1 - particle.progress),
-                      anchor: Anchor.center,
-                      overridePaint: Paint()
-                        ..color = Colors.white.withValues(
-                          alpha: 1 - particle.progress,
-                        ),
-                    );
-                  },
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-
+    game.particleEffects.playStarCollect(position);
     removeFromParent();
   }
 }

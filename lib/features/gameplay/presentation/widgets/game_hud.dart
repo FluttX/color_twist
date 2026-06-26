@@ -21,16 +21,30 @@ class GameHud extends StatelessWidget {
               icon: const Icon(Icons.pause),
             ),
             BlocBuilder<GameCubit, GameState>(
-              buildWhen: (previous, current) => previous.score != current.score,
+              buildWhen: (previous, current) =>
+                  previous.score != current.score ||
+                  previous.highScore != current.highScore,
               builder: (context, state) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'Score: ${state.score}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Score: ${state.score}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      if (state.highScore > 0)
+                        Text(
+                          'Best: ${state.highScore}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white70,
+                              ),
+                        ),
+                    ],
                   ),
                 );
               },

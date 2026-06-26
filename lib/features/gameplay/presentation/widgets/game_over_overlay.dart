@@ -14,9 +14,29 @@ class GameOverOverlay extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Game Over',
-              style: Theme.of(context).textTheme.headlineLarge,
+            BlocBuilder<GameCubit, GameState>(
+              buildWhen: (previous, current) =>
+                  previous.isNewHighScore != current.isNewHighScore,
+              builder: (context, state) {
+                if (state.isNewHighScore) {
+                  return Column(
+                    children: [
+                      Text(
+                        'New High Score!',
+                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                              color: const Color(0xFFFFD700),
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  );
+                }
+                return Text(
+                  'Game Over',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                );
+              },
             ),
             SizedBox(
               height: 140,
@@ -32,11 +52,26 @@ class GameOverOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             BlocBuilder<GameCubit, GameState>(
-              buildWhen: (previous, current) => previous.score != current.score,
+              buildWhen: (previous, current) =>
+                  previous.score != current.score ||
+                  previous.highScore != current.highScore,
               builder: (context, state) {
-                return Text(
-                  'Your Score: ${state.score}',
-                  style: Theme.of(context).textTheme.titleLarge,
+                return Column(
+                  children: [
+                    Text(
+                      'Your Score: ${state.score}',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    if (state.highScore > 0) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Best: ${state.highScore}',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                      ),
+                    ],
+                  ],
                 );
               },
             ),

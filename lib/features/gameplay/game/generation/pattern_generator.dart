@@ -348,7 +348,9 @@ class PatternGenerator {
     double? moveAmplitudeY;
     double? moveSpeed;
 
-    final allowMovement = patternId != PatternId.starCircle;
+    final allowMovement = patternId != PatternId.starCircle &&
+        patternId != PatternId.switcherCircle &&
+        patternId != PatternId.switcherDoubleCircle;
     final shouldMove = allowMovement &&
         (patternId == PatternId.movingCircle ||
             _random.nextDouble() <

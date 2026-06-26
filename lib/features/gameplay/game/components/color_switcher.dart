@@ -26,7 +26,7 @@ class ColorSwitcher extends PositionComponent
   bool get isCollected => _collected;
 
   void prepareForReuse({required Vector2 position}) {
-    this.position = position;
+    this.position = Vector2(0, position.y);
     _collected = false;
   }
 
@@ -71,11 +71,12 @@ class ColorSwitcher extends PositionComponent
 
   @override
   void render(Canvas canvas) {
+    final center = (size / 2).toOffset();
     final length = game.gameColors.length;
     final sweep = (math.pi * 2) / length;
 
     canvas.drawCircle(
-      Offset.zero,
+      center,
       radius + 8,
       Paint()
         ..color = Colors.white.withValues(alpha: 0.12)
@@ -84,7 +85,7 @@ class ColorSwitcher extends PositionComponent
 
     for (int i = 0; i < length; i++) {
       canvas.drawArc(
-        Rect.fromCircle(center: Offset.zero, radius: radius),
+        Rect.fromCircle(center: center, radius: radius),
         i * sweep,
         sweep,
         true,

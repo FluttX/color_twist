@@ -152,13 +152,25 @@ class Player extends PositionComponent
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
     if (other is ColorSwitcher) {
+      final switcherPosition = other.position.clone();
       other.removeFromParent();
       _changePlayerColorRandomly();
+      game.particleEffects.playColorSwitch(
+        switcherPosition,
+        _color,
+        game.gameColors,
+      );
       game.shakeScreen();
     } else if (other is CircleArc) {
       if (_color != other.color) {
         game.gameOver();
-      }
+        } else {
+          final rotator = other.parent;
+          if (!rotator.hasPassed) {
+            rotator.markPassed();
+            game.incrementCombo();
+          }
+        }
     } else if (other is StarComponent) {
       other.showCollectEffect();
       game.increaseScore();

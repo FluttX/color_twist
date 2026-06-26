@@ -18,6 +18,14 @@ class CircleRotator extends PositionComponent with HasGameReference<TwistColorGa
   final double thickness;
   final double rotationSpeed;
 
+  bool _passed = false;
+
+  bool get hasPassed => _passed;
+
+  void markPassed() {
+    _passed = true;
+  }
+
   @override
   void onLoad() {
     super.onLoad();

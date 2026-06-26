@@ -67,34 +67,39 @@ class _GameplayViewState extends State<_GameplayView> {
           builder: (context, state) {
             final game = context.read<GameCubit>().game;
 
-            return MediaQuery.removePadding(
-              context: context,
-              removeTop: true,
-              removeBottom: true,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Positioned.fill(
-                    child: GameplayParallaxBackground(
-                      cameraYListenable: game.cameraYNotifier,
-                      driftListenable: game.backgroundDriftNotifier,
-                    ),
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                MediaQuery.removePadding(
+                  context: context,
+                  removeTop: true,
+                  removeBottom: true,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Positioned.fill(
+                        child: GameplayParallaxBackground(
+                          cameraYListenable: game.cameraYNotifier,
+                          driftListenable: game.backgroundDriftNotifier,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: GameWidget(
+                          game: game,
+                          backgroundBuilder: (context) =>
+                              const ColoredBox(color: Colors.transparent),
+                        ),
+                      ),
+                    ],
                   ),
-                  Positioned.fill(
-                    child: GameWidget(
-                      game: game,
-                      backgroundBuilder: (context) =>
-                          const ColoredBox(color: Colors.transparent),
-                    ),
-                  ),
-                  if (state.status == GameStatus.playing)
-                    const Positioned.fill(child: GameHud()),
-                  if (state.status == GameStatus.paused)
-                    const Positioned.fill(child: PauseOverlay()),
-                  if (state.status == GameStatus.gameOver)
-                    const Positioned.fill(child: GameOverOverlay()),
-                ],
-              ),
+                ),
+                if (state.status == GameStatus.playing)
+                  const Positioned.fill(child: GameHud()),
+                if (state.status == GameStatus.paused)
+                  const Positioned.fill(child: PauseOverlay()),
+                if (state.status == GameStatus.gameOver)
+                  const Positioned.fill(child: GameOverOverlay()),
+              ],
             );
           },
         ),

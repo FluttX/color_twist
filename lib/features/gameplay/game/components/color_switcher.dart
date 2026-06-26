@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:color_twist/twist_color_game.dart';
+import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';

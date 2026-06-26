@@ -1,24 +1,26 @@
-import 'package:color_twist/component/circle_rotator.dart';
-import 'package:color_twist/component/color_switcher.dart';
-import 'package:color_twist/component/ground.dart';
-import 'package:color_twist/component/star_component.dart';
-import 'package:color_twist/twist_color_game.dart';
+import 'package:color_twist/features/gameplay/game/components/circle_rotator.dart';
+import 'package:color_twist/features/gameplay/game/components/color_switcher.dart';
+import 'package:color_twist/features/gameplay/game/components/star_component.dart';
+import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 
 class Player extends PositionComponent
     with HasGameReference<TwistColorGame>, CollisionCallbacks {
-  Player({this.radius = 12.0, required super.position}) : super(priority: 20);
+  Player({
+    this.radius = 12.0,
+    required super.position,
+  }) : super(priority: 20);
 
   final _velocity = Vector2.zero();
-  final _gravity = 980.0;
-  final _jumpSpeed = 350.0;
 
   final double radius;
   Color _color = Colors.white;
+
+  double get _gravity => game.config.gravity;
+  double get _jumpSpeed => game.config.jumpSpeed;
 
   @override
   void onLoad() {
@@ -42,10 +44,8 @@ class Player extends PositionComponent
     super.update(dt);
     position += _velocity * dt;
 
-    /// Get ground ref via key
-    Ground ground = game.findByKeyName(Ground.groundKey)!;
+    final ground = game.ground;
 
-    /// Check position of anchor for getting the bottom point of circle.
     if (positionOfAnchor(Anchor.bottomCenter).y > ground.position.y) {
       _velocity.setValues(0, 0);
       position = Vector2(0, ground.position.y - (height / 2));
@@ -64,9 +64,6 @@ class Player extends PositionComponent
     );
   }
 
-  /// [jump] function is use to make jump the player.
-  /// It jump y asis using [_jumpSpeed] value.
-  /// By default [_jumpSpeed] is 350.0
   void jump() {
     _velocity.y += -_jumpSpeed;
   }
@@ -84,7 +81,7 @@ class Player extends PositionComponent
     } else if (other is StarComponent) {
       other.showCollectEffect();
       game.increaseScore();
-      FlameAudio.play('collect.wav');
+      game.audioService.playCollectSound();
     }
   }
 

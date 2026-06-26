@@ -34,10 +34,21 @@ fvm flutter run -d macos
 
 ## Project Structure
 
-- `lib/main.dart` — Flutter UI (pause, score, game-over overlays)
-- `lib/twist_color_game.dart` — core Flame game
-- `lib/component/` — game entities (player, obstacles, collectibles)
-- `assets/` — images and audio
+```
+lib/
+  main.dart              — app entry
+  app/                   — MaterialApp shell
+  core/                  — constants, theme
+  services/              — audio_service
+  features/
+    home/                — menu screen
+    gameplay/
+      models/            — level + config models
+      data/              — level definitions + LevelLoader
+      presentation/      — GameCubit, screens, overlay widgets
+      game/              — TwistColorGame + Flame components
+assets/                  — images and audio
+```
 
 ## Analyze
 

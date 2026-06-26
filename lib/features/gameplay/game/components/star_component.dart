@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:color_twist/core/constants/asset_paths.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/particles.dart';
@@ -14,9 +15,8 @@ class StarComponent extends PositionComponent with CollisionCallbacks {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    _starSprite = await Sprite.load('star_icon.png');
+    _starSprite = await Sprite.load(AssetPaths.starIcon);
 
-    /// ADD HIT-BOX FOR COLLISION
     add(CircleHitbox(radius: size.x / 2, collisionType: CollisionType.passive));
   }
 

@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Tooling
 
-- Flutter is pinned via FVM at **3.44.4** (see `.fvm/fvm_config.json`).
+- Flutter is pinned via FVM at **3.44.4** (see `.fvmrc`).
 - Always use `fvm flutter` and `fvm dart` — not bare `flutter` / `dart`.
 - Run: `fvm flutter pub get`, `fvm flutter analyze`, `fvm flutter run`.
 
@@ -15,43 +15,69 @@ alwaysApply: true
 
 ```
 lib/
-  main.dart              # MaterialApp, HomeScreen, Flutter UI overlays
-  twist_color_game.dart  # TwistColorGame (FlameGame core)
-  component/             # Flame PositionComponents
-    player.dart
-    ground.dart
-    circle_rotator.dart
-    color_switcher.dart
-    star_component.dart
+  main.dart
+  app/
+    app.dart
+  core/
+    constants/           # game_constants, asset_paths
+    theme/
+  services/
+    audio_service.dart
+  features/
+    home/
+      presentation/screens/
+    gameplay/
+      models/            # game_config, game_status, level_definition, level_object
+      data/
+        levels/          # default_level.dart
+        level_loader.dart
+      presentation/
+        cubit/           # GameCubit + GameState (flutter_bloc)
+        screens/
+        widgets/         # HUD + overlays
+      game/
+        twist_color_game.dart
+        components/
 assets/
   images/
   audio/
 ```
 
-- **TwistColorGame** owns world state: score, pause, game-over, colors, level generation.
-- **Flutter overlays** (pause, score, game-over) live in `main.dart` — not in Flame.
-- **Game logic** stays in Flame components; use `HasGameReference<TwistColorGame>` and `game` (not deprecated `HasGameRef` / `gameRef`).
+## Layer boundaries
 
-## Flame Patterns
+- **Flame layer** (`features/gameplay/game/`): physics, collisions, rendering, level spawning. Never import `flutter_bloc`.
+- **Flutter layer** (`features/*/presentation/`): HUD, overlays, navigation. Never contain game logic.
+- **GameCubit** bridges Flame ↔ Flutter: owns `TwistColorGame`, exposes `GameState` (status + score).
+- Do not use `ValueNotifier` in `TwistColorGame` — use cubit callbacks (`onScoreChanged`, `onGameOver`).
 
-- Components extend `PositionComponent` with mixins: `HasGameReference`, `CollisionCallbacks` where needed.
-- Game colors come from `TwistColorGame.gameColors` — do not hardcode colors in components.
+## Flame patterns
+
+- Components extend `PositionComponent` with mixins: `HasGameReference<TwistColorGame>`, `CollisionCallbacks` where needed.
+- Game colors come from `GameConfig.gameColors` on `TwistColorGame` — do not hardcode colors in components.
 - Collisions: `ColorSwitcher` changes player color; `CircleArc` wrong color = game over; `StarComponent` = score.
-- Camera follows player upward; fixed resolution 600×1000.
+- Camera follows player upward; fixed resolution 600×1000 (`GameConstants`).
 - Tap anywhere to jump (`TapCallbacks` on `TwistColorGame`).
+- Levels: add `LevelDefinition` data under `data/levels/`; spawn via `LevelLoader`.
 
-## Future Extensions (planned, not yet implemented)
+## State management
+
+- `flutter_bloc` + `Equatable` for presentation state.
+- `GameCubit` methods: `pause()`, `resume()`, `playAgain()`.
+- `GameStatus` enum: `playing`, `paused`, `gameOver`.
+
+## Future extensions
 
 | Feature | Approach |
 |---------|----------|
-| **Levels** | Replace hardcoded `_generateGameComponents()` with `LevelDefinition` data + `LevelLoader` |
-| **Difficulty** | Config on `TwistColorGame`: gravity, rotation speed, obstacle density |
-| **Profile** | `PlayerProfile` model + `shared_preferences` + menu screen before `GameWidget` |
+| **More levels** | New files in `data/levels/`; optional JSON loader later |
+| **Difficulty** | Extend `GameConfig`: gravity, rotation speed, obstacle density |
+| **Profile** | `features/profile/` + `shared_preferences` + menu before gameplay |
 
-When adding these, prefer new files under `lib/models/`, `lib/screens/` — keep changes scoped.
+When adding features, prefer new files under the matching `features/<name>/` folder — keep changes scoped.
 
 ## Conventions
 
 - Minimize scope per change; match existing naming and structure.
 - Do not move game logic into Flutter widgets.
-- Assets go in `assets/images/` and `assets/audio/`; declare in `pubspec.yaml`.
+- Use `package:color_twist/...` imports consistently.
+- Assets go in `assets/images/` and `assets/audio/`; paths in `AssetPaths`; declare in `pubspec.yaml`.

@@ -39,8 +39,8 @@ class Player extends PositionComponent
   Color get currentColor => _color;
   bool get isOnGround => _isOnGround;
 
-  double get _gravity => game.config.gravity;
-  double get _jumpSpeed => game.config.jumpSpeed;
+  double get _gravity => game.effectiveGravity;
+  double get _jumpSpeed => game.effectiveJumpSpeed;
 
   @override
   void onLoad() {
@@ -149,28 +149,36 @@ class Player extends PositionComponent
   }
 
   @override
-  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
-    super.onCollision(intersectionPoints, other);
-    if (other is ColorSwitcher) {
-      final switcherPosition = other.position.clone();
-      other.removeFromParent();
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
+    super.onCollisionStart(intersectionPoints, other);
+
+    final switcher = _resolveColorSwitcher(other);
+    if (switcher != null) {
+      final switcherPosition = switcher.position.clone();
       _changePlayerColorRandomly();
+      game.releaseObstacle(switcher);
       game.particleEffects.playColorSwitch(
         switcherPosition,
         _color,
         game.gameColors,
       );
       game.shakeScreen();
-    } else if (other is CircleArc) {
+      return;
+    }
+
+    if (other is CircleArc) {
       if (_color != other.color) {
         game.gameOver();
-        } else {
-          final rotator = other.parent;
-          if (!rotator.hasPassed) {
-            rotator.markPassed();
-            game.incrementCombo();
-          }
+      } else {
+        final rotator = other.parent;
+        if (!rotator.hasPassed) {
+          rotator.markPassed();
+          game.incrementCombo();
         }
+      }
     } else if (other is StarComponent) {
       other.showCollectEffect();
       game.increaseScore();
@@ -179,7 +187,23 @@ class Player extends PositionComponent
     }
   }
 
+  ColorSwitcher? _resolveColorSwitcher(PositionComponent other) {
+    if (other is ColorSwitcher) return other;
+    if (other.parent is ColorSwitcher) return other.parent as ColorSwitcher;
+    return null;
+  }
+
   void _changePlayerColorRandomly() {
-    _color = game.gameColors.random();
+    final colors = game.gameColors;
+    if (colors.isEmpty) return;
+    if (colors.length == 1) {
+      _color = colors.first;
+      return;
+    }
+    var next = colors.random();
+    while (next == _color) {
+      next = colors.random();
+    }
+    _color = next;
   }
 }

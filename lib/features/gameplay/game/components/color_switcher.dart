@@ -15,17 +15,30 @@ class ColorSwitcher extends PositionComponent
           size: Vector2.all(radius * 2),
         );
 
+  ColorSwitcher.initial() : this(position: Vector2.zero());
+
   final double radius;
+  bool _hitboxAdded = false;
+
+  void prepareForReuse({required Vector2 position}) {
+    this.position = position;
+  }
+
+  void prepareForPool() {}
 
   @override
   void onLoad() {
     super.onLoad();
+    _ensureHitbox();
+  }
+
+  void _ensureHitbox() {
+    if (_hitboxAdded) return;
     add(CircleHitbox(
-      radius: radius,
-      anchor: anchor,
-      position: size / 2,
+      radius: radius + 6,
       collisionType: CollisionType.passive,
     ));
+    _hitboxAdded = true;
   }
 
   @override

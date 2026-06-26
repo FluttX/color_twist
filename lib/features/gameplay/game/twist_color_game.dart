@@ -7,6 +7,10 @@ import 'package:color_twist/features/gameplay/data/level_loader.dart';
 import 'package:color_twist/features/gameplay/data/levels/default_level.dart';
 import 'package:color_twist/features/gameplay/game/components/ground.dart';
 import 'package:color_twist/features/gameplay/game/components/player.dart';
+import 'package:color_twist/features/gameplay/game/generation/difficulty_manager.dart';
+import 'package:color_twist/features/gameplay/game/generation/infinite_level_controller.dart';
+import 'package:color_twist/features/gameplay/game/generation/obstacle_factory.dart';
+import 'package:color_twist/features/gameplay/game/generation/pattern_generator.dart';
 import 'package:color_twist/features/gameplay/game/particles/particle_effects.dart';
 import 'package:color_twist/features/gameplay/models/game_config.dart';
 import 'package:color_twist/features/gameplay/models/level_definition.dart';
@@ -27,6 +31,7 @@ class TwistColorGame extends FlameGame
     this.config = const GameConfig(),
     this.level = defaultLevel,
     this.levelLoader = const LevelLoader(),
+    this.infiniteMode = true,
     AudioService? audioService,
     HapticService? hapticService,
     ScoreService? scoreService,
@@ -45,6 +50,7 @@ class TwistColorGame extends FlameGame
   final GameConfig config;
   final LevelDefinition level;
   final LevelLoader levelLoader;
+  final bool infiniteMode;
   final AudioService audioService;
   final HapticService hapticService;
   final ScoreService scoreService;
@@ -52,6 +58,9 @@ class TwistColorGame extends FlameGame
   late Player player;
   late Ground ground;
   late ParticleEffects particleEffects;
+  late ObstacleFactory obstacleFactory;
+  InfiniteLevelController? _levelController;
+  final DifficultyManager _difficultyManager = const DifficultyManager();
 
   int _score = 0;
   int _combo = 0;
@@ -67,6 +76,14 @@ class TwistColorGame extends FlameGame
   List<Color> get gameColors => config.gameColors;
 
   bool get isGamePaused => timeScale == 0.0;
+
+  double get effectiveGravity => infiniteMode
+      ? _difficultyManager.snapshotForScore(_score).gravity
+      : config.gravity;
+
+  double get effectiveJumpSpeed => infiniteMode
+      ? _difficultyManager.snapshotForScore(_score).jumpSpeed
+      : config.jumpSpeed;
 
   @override
   Color backgroundColor() => const Color(0xFF222222);
@@ -104,9 +121,27 @@ class TwistColorGame extends FlameGame
 
     camera.viewfinder.position = Vector2.zero();
 
-    levelLoader.loadInto(world, level);
+    obstacleFactory = ObstacleFactory();
+
+    if (infiniteMode) {
+      _levelController = InfiniteLevelController(
+        world: world,
+        obstacleFactory: obstacleFactory,
+        patternGenerator: PatternGenerator(colorCount: config.gameColors.length),
+        difficultyManager: _difficultyManager,
+      );
+      _levelController!.seedInitial(level.playerY);
+    } else {
+      _levelController = null;
+      levelLoader.loadInto(world, level, obstacleFactory: obstacleFactory);
+    }
 
     audioService.playBackgroundMusic();
+  }
+
+  void releaseObstacle(PositionComponent component) {
+    _levelController?.unregister(component);
+    obstacleFactory.release(component);
   }
 
   void shakeScreen({double intensity = 4.0, double duration = 0.15}) {
@@ -150,6 +185,9 @@ class TwistColorGame extends FlameGame
   @override
   void update(double dt) {
     _updateCamera(dt);
+    if (!isGamePaused && !_isGameOver) {
+      _levelController?.tick(player.position.y, _score);
+    }
     super.update(dt);
   }
 
@@ -192,8 +230,12 @@ class TwistColorGame extends FlameGame
 
     await Future<void>.delayed(const Duration(milliseconds: 450));
 
+    _levelController?.reset();
+
     for (final child in world.children.toList()) {
-      child.removeFromParent();
+      if (child is! ParticleEffects) {
+        child.removeFromParent();
+      }
     }
     onGameOver(_score, isNewHighScore: isNewHigh);
   }

@@ -52,7 +52,7 @@ class TwistColorGame extends FlameGame
     super.onMount();
   }
 
-  _initializeGame() {
+  void _initializeGame() {
     isGameOver.value = false;
 
     world.add(Ground(position: Vector2(0, 400)));

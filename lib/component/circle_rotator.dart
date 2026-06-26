@@ -6,7 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 
-class CircleRotator extends PositionComponent with HasGameRef<TwistColorGame> {
+class CircleRotator extends PositionComponent with HasGameReference<TwistColorGame> {
   CircleRotator({
     required super.position,
     required super.size,
@@ -22,14 +22,14 @@ class CircleRotator extends PositionComponent with HasGameRef<TwistColorGame> {
   void onLoad() {
     super.onLoad();
 
-    final length = gameRef.gameColors.length;
+    final length = game.gameColors.length;
     const circle = math.pi * 2;
     final sweep = circle / length;
 
     for (int i = 0; i < length; i++) {
       add(
         CircleArc(
-          color: gameRef.gameColors[i],
+          color: game.gameColors[i],
           startAngle: i * sweep,
           sweepAngle: sweep,
         ),

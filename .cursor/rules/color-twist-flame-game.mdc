@@ -1,0 +1,57 @@
+---
+description: Color Twist Flame game architecture, tooling, and extension conventions
+alwaysApply: true
+---
+
+# Color Twist — Flame Game
+
+## Tooling
+
+- Flutter is pinned via FVM at **3.44.4** (see `.fvm/fvm_config.json`).
+- Always use `fvm flutter` and `fvm dart` — not bare `flutter` / `dart`.
+- Run: `fvm flutter pub get`, `fvm flutter analyze`, `fvm flutter run`.
+
+## Architecture
+
+```
+lib/
+  main.dart              # MaterialApp, HomeScreen, Flutter UI overlays
+  twist_color_game.dart  # TwistColorGame (FlameGame core)
+  component/             # Flame PositionComponents
+    player.dart
+    ground.dart
+    circle_rotator.dart
+    color_switcher.dart
+    star_component.dart
+assets/
+  images/
+  audio/
+```
+
+- **TwistColorGame** owns world state: score, pause, game-over, colors, level generation.
+- **Flutter overlays** (pause, score, game-over) live in `main.dart` — not in Flame.
+- **Game logic** stays in Flame components; use `HasGameReference<TwistColorGame>` and `game` (not deprecated `HasGameRef` / `gameRef`).
+
+## Flame Patterns
+
+- Components extend `PositionComponent` with mixins: `HasGameReference`, `CollisionCallbacks` where needed.
+- Game colors come from `TwistColorGame.gameColors` — do not hardcode colors in components.
+- Collisions: `ColorSwitcher` changes player color; `CircleArc` wrong color = game over; `StarComponent` = score.
+- Camera follows player upward; fixed resolution 600×1000.
+- Tap anywhere to jump (`TapCallbacks` on `TwistColorGame`).
+
+## Future Extensions (planned, not yet implemented)
+
+| Feature | Approach |
+|---------|----------|
+| **Levels** | Replace hardcoded `_generateGameComponents()` with `LevelDefinition` data + `LevelLoader` |
+| **Difficulty** | Config on `TwistColorGame`: gravity, rotation speed, obstacle density |
+| **Profile** | `PlayerProfile` model + `shared_preferences` + menu screen before `GameWidget` |
+
+When adding these, prefer new files under `lib/models/`, `lib/screens/` — keep changes scoped.
+
+## Conventions
+
+- Minimize scope per change; match existing naming and structure.
+- Do not move game logic into Flutter widgets.
+- Assets go in `assets/images/` and `assets/audio/`; declare in `pubspec.yaml`.

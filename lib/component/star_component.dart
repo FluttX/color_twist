@@ -53,8 +53,8 @@ class StarComponent extends PositionComponent with CollisionCallbacks {
                       size: size * (1 - particle.progress),
                       anchor: Anchor.center,
                       overridePaint: Paint()
-                        ..color = Colors.white.withOpacity(
-                          1 - particle.progress,
+                        ..color = Colors.white.withValues(
+                          alpha: 1 - particle.progress,
                         ),
                     );
                   },

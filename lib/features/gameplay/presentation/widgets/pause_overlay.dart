@@ -1,4 +1,5 @@
 import 'package:color_twist/features/gameplay/presentation/cubit/game_cubit.dart';
+import 'package:color_twist/features/gameplay/presentation/widgets/game_hud.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -7,27 +8,37 @@ class PauseOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black45,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'PAUSED!',
-              style: Theme.of(context).textTheme.headlineLarge,
+    final topInset = MediaQuery.viewPaddingOf(context).top + kGameHudTopPadding;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(color: Colors.black45),
+        const Center(
+          child: Text(
+            'PAUSED!',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-            SizedBox(
-              height: 140,
-              width: 140,
-              child: IconButton(
-                onPressed: context.read<GameCubit>().resume,
-                icon: const Icon(Icons.play_arrow, size: 100),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        Positioned(
+          top: topInset,
+          left: 4,
+          child: IconButton(
+            onPressed: context.read<GameCubit>().resume,
+            icon: const Icon(Icons.play_arrow, size: 28),
+            tooltip: 'Resume',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 48,
+              minHeight: 48,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

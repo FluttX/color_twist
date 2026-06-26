@@ -5,8 +5,14 @@ import 'package:color_twist/core/constants/game_constants.dart';
 import 'package:color_twist/core/services/score_service.dart';
 import 'package:color_twist/features/gameplay/data/level_loader.dart';
 import 'package:color_twist/features/gameplay/data/levels/default_level.dart';
+import 'package:color_twist/features/gameplay/game/components/color_switcher.dart';
 import 'package:color_twist/features/gameplay/game/components/ground.dart';
 import 'package:color_twist/features/gameplay/game/components/player.dart';
+import 'package:color_twist/features/gameplay/game/components/star_component.dart';
+import 'package:color_twist/features/gameplay/game/generation/difficulty_manager.dart';
+import 'package:color_twist/features/gameplay/game/generation/infinite_level_controller.dart';
+import 'package:color_twist/features/gameplay/game/generation/obstacle_factory.dart';
+import 'package:color_twist/features/gameplay/game/generation/pattern_generator.dart';
 import 'package:color_twist/features/gameplay/game/particles/particle_effects.dart';
 import 'package:color_twist/features/gameplay/models/game_config.dart';
 import 'package:color_twist/features/gameplay/models/level_definition.dart';
@@ -27,6 +33,7 @@ class TwistColorGame extends FlameGame
     this.config = const GameConfig(),
     this.level = defaultLevel,
     this.levelLoader = const LevelLoader(),
+    this.infiniteMode = true,
     AudioService? audioService,
     HapticService? hapticService,
     ScoreService? scoreService,
@@ -45,6 +52,7 @@ class TwistColorGame extends FlameGame
   final GameConfig config;
   final LevelDefinition level;
   final LevelLoader levelLoader;
+  final bool infiniteMode;
   final AudioService audioService;
   final HapticService hapticService;
   final ScoreService scoreService;
@@ -52,6 +60,12 @@ class TwistColorGame extends FlameGame
   late Player player;
   late Ground ground;
   late ParticleEffects particleEffects;
+  late ObstacleFactory obstacleFactory;
+  InfiniteLevelController? _levelController;
+  final DifficultyManager _difficultyManager = const DifficultyManager();
+
+  final ValueNotifier<double> cameraYNotifier = ValueNotifier(0);
+  final ValueNotifier<double> backgroundDriftNotifier = ValueNotifier(0);
 
   int _score = 0;
   int _combo = 0;
@@ -62,14 +76,29 @@ class TwistColorGame extends FlameGame
 
   double _cameraTargetY = 0;
   double _cameraCurrentY = 0;
+  double _backgroundDrift = 0;
   double _bounceElapsed = 0;
 
   List<Color> get gameColors => config.gameColors;
 
   bool get isGamePaused => timeScale == 0.0;
 
+  double get effectiveGravity => infiniteMode
+      ? _difficultyManager.snapshotForScore(_score).gravity
+      : config.gravity;
+
+  double get effectiveJumpSpeed => infiniteMode
+      ? _difficultyManager.snapshotForScore(_score).jumpSpeed
+      : config.jumpSpeed;
+
   @override
-  Color backgroundColor() => const Color(0xFF222222);
+  Color backgroundColor() => const Color(0x00000000);
+
+  double get effectiveCameraFollowSpeed => infiniteMode
+      ? _lerp(7.0, GameConstants.defaultCameraFollowSpeed, (_score / 150).clamp(0.0, 1.0))
+      : config.cameraFollowSpeed;
+
+  double _lerp(double a, double b, double t) => a + (b - a) * t;
 
   @override
   Future<void> onLoad() async {
@@ -95,18 +124,66 @@ class TwistColorGame extends FlameGame
     _shakeIntensity = 0;
     _cameraTargetY = 0;
     _cameraCurrentY = 0;
+    _backgroundDrift = 0;
+    cameraYNotifier.value = 0;
+    backgroundDriftNotifier.value = 0;
     _bounceElapsed = config.cameraBounceDuration;
     onScoreChanged(_score);
 
     ground = Ground(position: Vector2(0, level.groundY));
     world.add(ground);
+
     world.add(player = Player(position: Vector2(0, level.playerY)));
 
     camera.viewfinder.position = Vector2.zero();
 
-    levelLoader.loadInto(world, level);
+    obstacleFactory = ObstacleFactory();
+
+    if (infiniteMode) {
+      _levelController = InfiniteLevelController(
+        world: world,
+        obstacleFactory: obstacleFactory,
+        patternGenerator: PatternGenerator(colorCount: config.gameColors.length),
+        difficultyManager: _difficultyManager,
+      );
+      _levelController!.seedInitial(level.playerY, _cameraCurrentY);
+    } else {
+      _levelController = null;
+      levelLoader.loadInto(world, level, obstacleFactory: obstacleFactory);
+    }
 
     audioService.playBackgroundMusic();
+  }
+
+  void releaseObstacle(PositionComponent component) {
+    _levelController?.unregister(component);
+    obstacleFactory.release(component);
+  }
+
+  void collectColorSwitcher(ColorSwitcher switcher) {
+    if (!switcher.isMounted || switcher.isCollected) return;
+
+    switcher.markCollected();
+    final switcherPosition = switcher.position.clone();
+    player.applyRandomColor();
+    releaseObstacle(switcher);
+    particleEffects.playColorSwitch(
+      switcherPosition,
+      player.currentColor,
+      gameColors,
+    );
+    shakeScreen(intensity: 3.0);
+  }
+
+  void collectStar(StarComponent star) {
+    if (!star.isMounted || star.isCollected) return;
+
+    star.markCollected();
+    particleEffects.playStarCollect(star.position);
+    releaseObstacle(star);
+    increaseScore();
+    audioService.playCollectSound();
+    hapticService.onCollect();
   }
 
   void shakeScreen({double intensity = 4.0, double duration = 0.15}) {
@@ -133,7 +210,7 @@ class TwistColorGame extends FlameGame
     }
 
     final goalY = _cameraTargetY + bounceY;
-    final t = 1 - exp(-config.cameraFollowSpeed * dt);
+    final t = 1 - exp(-effectiveCameraFollowSpeed * dt);
     _cameraCurrentY += (goalY - _cameraCurrentY) * t;
 
     var shakeX = 0.0;
@@ -145,11 +222,29 @@ class TwistColorGame extends FlameGame
     }
 
     camera.viewfinder.position = Vector2(shakeX, _cameraCurrentY + shakeY);
+    cameraYNotifier.value = _cameraCurrentY + shakeY;
+  }
+
+  void _updateInfiniteWorld() {
+    if (!infiniteMode) return;
+
+    final cameraBottom = _cameraCurrentY + GameConstants.cameraHeight / 2;
+    if (ground.isMounted && ground.position.y > cameraBottom + 80) {
+      ground.removeFromParent();
+    }
   }
 
   @override
   void update(double dt) {
+    if (!isGamePaused) {
+      _backgroundDrift += dt * 12;
+      backgroundDriftNotifier.value = _backgroundDrift;
+    }
     _updateCamera(dt);
+    if (!isGamePaused && !_isGameOver) {
+      _updateInfiniteWorld();
+      _levelController?.tick(player.position.y, _cameraCurrentY, _score);
+    }
     super.update(dt);
   }
 
@@ -192,8 +287,12 @@ class TwistColorGame extends FlameGame
 
     await Future<void>.delayed(const Duration(milliseconds: 450));
 
+    _levelController?.reset();
+
     for (final child in world.children.toList()) {
-      child.removeFromParent();
+      if (child is! ParticleEffects) {
+        child.removeFromParent();
+      }
     }
     onGameOver(_score, isNewHighScore: isNewHigh);
   }

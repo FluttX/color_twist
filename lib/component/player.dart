@@ -10,7 +10,7 @@ import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 
 class Player extends PositionComponent
-    with HasGameRef<TwistColorGame>, CollisionCallbacks {
+    with HasGameReference<TwistColorGame>, CollisionCallbacks {
   Player({this.radius = 12.0, required super.position}) : super(priority: 20);
 
   final _velocity = Vector2.zero();
@@ -43,7 +43,7 @@ class Player extends PositionComponent
     position += _velocity * dt;
 
     /// Get ground ref via key
-    Ground ground = gameRef.findByKeyName(Ground.groundKey)!;
+    Ground ground = game.findByKeyName(Ground.groundKey)!;
 
     /// Check position of anchor for getting the bottom point of circle.
     if (positionOfAnchor(Anchor.bottomCenter).y > ground.position.y) {
@@ -79,16 +79,16 @@ class Player extends PositionComponent
       _changePlayerColorRandomly();
     } else if (other is CircleArc) {
       if (_color != other.color) {
-        gameRef.gameOver();
+        game.gameOver();
       }
     } else if (other is StarComponent) {
       other.showCollectEffect();
-      gameRef.increaseScore();
+      game.increaseScore();
       FlameAudio.play('collect.wav');
     }
   }
 
   void _changePlayerColorRandomly() {
-    _color = gameRef.gameColors.random();
+    _color = game.gameColors.random();
   }
 }

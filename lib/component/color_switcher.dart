@@ -6,7 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 class ColorSwitcher extends PositionComponent
-    with HasGameRef<TwistColorGame>, CollisionCallbacks {
+    with HasGameReference<TwistColorGame>, CollisionCallbacks {
   ColorSwitcher({
     required super.position,
     this.radius = 20.0,
@@ -30,7 +30,7 @@ class ColorSwitcher extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    final length = gameRef.gameColors.length;
+    final length = game.gameColors.length;
     final sweep = (math.pi * 2) / length;
 
     for (int i = 0; i < length; i++) {
@@ -39,7 +39,7 @@ class ColorSwitcher extends PositionComponent
         i * sweep,
         sweep,
         true,
-        Paint()..color = gameRef.gameColors[i],
+        Paint()..color = game.gameColors[i],
       );
     }
   }

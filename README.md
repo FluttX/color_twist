@@ -22,14 +22,11 @@ fvm flutter pub get
 ## Run
 
 ```bash
-# List connected devices
+# Run on iPhone 17 simulator (default for this project)
+fvm flutter run -d "iPhone 17"
+
+# List connected devices if the simulator is missing
 fvm flutter devices
-
-# Run on a connected Android device
-fvm flutter run -d <device-id>
-
-# Example: macOS desktop
-fvm flutter run -d macos
 ```
 
 ## Project Structure

@@ -9,7 +9,7 @@ alwaysApply: true
 
 - Flutter is pinned via FVM at **3.44.4** (see `.fvmrc`).
 - Always use `fvm flutter` and `fvm dart` — not bare `flutter` / `dart`.
-- Run: `fvm flutter pub get`, `fvm flutter analyze`, `fvm flutter run`.
+- Run: `fvm flutter pub get`, `fvm flutter analyze`, `fvm flutter run -d "iPhone 17"`.
 
 ## Architecture
 

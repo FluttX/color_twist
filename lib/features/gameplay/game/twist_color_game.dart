@@ -52,6 +52,10 @@ class TwistColorGame extends FlameGame
   double _shakeIntensity = 0;
   final _rnd = Random();
 
+  double _cameraTargetY = 0;
+  double _cameraCurrentY = 0;
+  double _bounceElapsed = 0;
+
   List<Color> get gameColors => config.gameColors;
 
   bool get isGamePaused => timeScale == 0.0;
@@ -77,13 +81,16 @@ class TwistColorGame extends FlameGame
     _score = 0;
     _shakeDuration = 0;
     _shakeIntensity = 0;
+    _cameraTargetY = 0;
+    _cameraCurrentY = 0;
+    _bounceElapsed = config.cameraBounceDuration;
     onScoreChanged(_score);
 
     ground = Ground(position: Vector2(0, level.groundY));
     world.add(ground);
     world.add(player = Player(position: Vector2(0, level.playerY)));
 
-    camera.moveTo(Vector2(0, 0));
+    camera.viewfinder.position = Vector2.zero();
 
     levelLoader.loadInto(world, level);
 
@@ -95,23 +102,42 @@ class TwistColorGame extends FlameGame
     _shakeDuration = duration;
   }
 
-  @override
-  void update(double dt) {
-    var cameraY = camera.viewfinder.position.y;
-    final playerY = player.position.y;
-    if (playerY < cameraY) {
-      cameraY = playerY;
+  void _triggerCameraBounce() {
+    _bounceElapsed = 0;
+  }
+
+  void _updateCamera(double dt) {
+    final desiredY = player.position.y - config.cameraLookAhead;
+    if (desiredY < _cameraTargetY) {
+      _cameraTargetY = desiredY;
     }
 
+    var bounceY = 0.0;
+    if (_bounceElapsed < config.cameraBounceDuration) {
+      final progress =
+          (_bounceElapsed / config.cameraBounceDuration).clamp(0.0, 1.0);
+      bounceY = -config.cameraJumpBounce * sin(progress * pi);
+      _bounceElapsed += dt;
+    }
+
+    final goalY = _cameraTargetY + bounceY;
+    final t = 1 - exp(-config.cameraFollowSpeed * dt);
+    _cameraCurrentY += (goalY - _cameraCurrentY) * t;
+
+    var shakeX = 0.0;
+    var shakeY = 0.0;
     if (_shakeDuration > 0) {
       _shakeDuration -= dt;
-      final offsetX = (_rnd.nextDouble() - 0.5) * 2 * _shakeIntensity;
-      final offsetY = (_rnd.nextDouble() - 0.5) * 2 * _shakeIntensity;
-      camera.viewfinder.position = Vector2(offsetX, cameraY + offsetY);
-    } else {
-      camera.viewfinder.position = Vector2(0, cameraY);
+      shakeX = (_rnd.nextDouble() - 0.5) * 2 * _shakeIntensity;
+      shakeY = (_rnd.nextDouble() - 0.5) * 2 * _shakeIntensity;
     }
 
+    camera.viewfinder.position = Vector2(shakeX, _cameraCurrentY + shakeY);
+  }
+
+  @override
+  void update(double dt) {
+    _updateCamera(dt);
     super.update(dt);
   }
 
@@ -119,6 +145,7 @@ class TwistColorGame extends FlameGame
   void onTapDown(TapDownEvent event) {
     player.jump();
     hapticService.onJump();
+    _triggerCameraBounce();
     super.onTapDown(event);
   }
 

@@ -1,14 +1,12 @@
+import 'package:color_twist/core/constants/asset_paths.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 class Ground extends PositionComponent {
-  static const String groundKey = 'single_ground_Key';
-
   Ground({required super.position})
       : super(
           size: Vector2(200, 2),
           anchor: Anchor.center,
-          key: ComponentKey.named(groundKey),
         );
 
   late Sprite fingerSprite;
@@ -16,7 +14,7 @@ class Ground extends PositionComponent {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    fingerSprite = await Sprite.load('finger_tap.png');
+    fingerSprite = await Sprite.load(AssetPaths.fingerTap);
   }
 
   @override

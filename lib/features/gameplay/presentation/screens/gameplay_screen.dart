@@ -1,4 +1,6 @@
 import 'package:color_twist/features/gameplay/models/game_status.dart';
+import 'package:color_twist/app/app_services.dart';
+import 'package:color_twist/core/retention/retention_engine.dart';
 import 'package:color_twist/features/gameplay/presentation/cubit/game_cubit.dart';
 import 'package:color_twist/features/gameplay/presentation/cubit/game_state.dart';
 import 'package:color_twist/features/gameplay/presentation/widgets/game_hud.dart';
@@ -11,7 +13,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GameplayScreen extends StatelessWidget {
-  const GameplayScreen({super.key});
+  const GameplayScreen({super.key, this.retentionEngine});
+
+  final RetentionEngine? retentionEngine;
 
   static const _edgeToEdgeOverlay = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -25,7 +29,10 @@ class GameplayScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => GameCubit(),
+      create: (_) => GameCubit(
+        scoreService: AppServices.instance.scoreService,
+        retentionEngine: retentionEngine ?? AppServices.instance.retentionEngine,
+      ),
       child: const _GameplayView(),
     );
   }

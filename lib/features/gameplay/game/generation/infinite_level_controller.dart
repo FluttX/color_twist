@@ -5,6 +5,7 @@ import 'package:color_twist/features/gameplay/game/generation/difficulty_manager
 import 'package:color_twist/features/gameplay/game/generation/difficulty_snapshot.dart';
 import 'package:color_twist/features/gameplay/game/generation/obstacle_factory.dart';
 import 'package:color_twist/features/gameplay/game/generation/pattern_generator.dart';
+import 'package:color_twist/features/gameplay/game/components/star_component.dart';
 import 'package:color_twist/features/gameplay/models/level_object.dart';
 import 'package:flame/components.dart';
 
@@ -14,12 +15,14 @@ class InfiniteLevelController {
     required this.obstacleFactory,
     required this.patternGenerator,
     required this.difficultyManager,
+    this.onStarMissed,
   });
 
   final World world;
   final ObstacleFactory obstacleFactory;
   final PatternGenerator patternGenerator;
   final DifficultyManager difficultyManager;
+  final void Function()? onStarMissed;
 
   final List<PositionComponent> _activeObstacles = [];
 
@@ -121,6 +124,9 @@ class InfiniteLevelController {
         .toList();
 
     for (final obstacle in toRemove) {
+      if (obstacle is StarComponent && !obstacle.isCollected) {
+        onStarMissed?.call();
+      }
       obstacleFactory.release(obstacle);
       _activeObstacles.remove(obstacle);
     }

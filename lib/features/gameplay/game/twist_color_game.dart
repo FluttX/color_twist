@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:color_twist/core/constants/asset_paths.dart';
 import 'package:color_twist/core/constants/game_constants.dart';
+import 'package:color_twist/core/retention/models/run_stats.dart';
 import 'package:color_twist/core/services/score_service.dart';
 import 'package:color_twist/features/gameplay/data/level_loader.dart';
 import 'package:color_twist/features/gameplay/data/levels/default_level.dart';
@@ -48,7 +49,7 @@ class TwistColorGame extends FlameGame
         );
 
   final void Function(int score) onScoreChanged;
-  final void Function(int score, {required bool isNewHighScore}) onGameOver;
+  final void Function(RunStats stats, {required bool isNewHighScore}) onGameOver;
   final GameConfig config;
   final LevelDefinition level;
   final LevelLoader levelLoader;
@@ -69,6 +70,9 @@ class TwistColorGame extends FlameGame
 
   int _score = 0;
   int _combo = 0;
+  int _jumps = 0;
+  int _colorChanges = 0;
+  int _starsMissed = 0;
   bool _isGameOver = false;
   double _shakeDuration = 0;
   double _shakeIntensity = 0;
@@ -119,6 +123,9 @@ class TwistColorGame extends FlameGame
   void _initializeGame() {
     _score = 0;
     _combo = 0;
+    _jumps = 0;
+    _colorChanges = 0;
+    _starsMissed = 0;
     _isGameOver = false;
     _shakeDuration = 0;
     _shakeIntensity = 0;
@@ -145,6 +152,7 @@ class TwistColorGame extends FlameGame
         obstacleFactory: obstacleFactory,
         patternGenerator: PatternGenerator(colorCount: config.gameColors.length),
         difficultyManager: _difficultyManager,
+        onStarMissed: _onStarMissed,
       );
       _levelController!.seedInitial(level.playerY, _cameraCurrentY);
     } else {
@@ -164,6 +172,7 @@ class TwistColorGame extends FlameGame
     if (!switcher.isMounted || switcher.isCollected) return;
 
     switcher.markCollected();
+    _colorChanges++;
     final switcherPosition = switcher.position.clone();
     player.applyRandomColor();
     releaseObstacle(switcher);
@@ -251,6 +260,7 @@ class TwistColorGame extends FlameGame
   @override
   void onTapDown(TapDownEvent event) {
     if (_isGameOver) return;
+    _jumps++;
     player.jump();
     hapticService.onJump();
     _triggerCameraBounce();
@@ -294,7 +304,20 @@ class TwistColorGame extends FlameGame
         child.removeFromParent();
       }
     }
-    onGameOver(_score, isNewHighScore: isNewHigh);
+    onGameOver(
+      RunStats(
+        score: _score,
+        starsCollected: _score,
+        jumps: _jumps,
+        colorChanges: _colorChanges,
+        starsMissed: _starsMissed,
+      ),
+      isNewHighScore: isNewHigh,
+    );
+  }
+
+  void _onStarMissed() {
+    _starsMissed++;
   }
 
   void playAgain() {

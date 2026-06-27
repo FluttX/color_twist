@@ -1,12 +1,18 @@
 import 'package:color_twist/app/app_services.dart';
+import 'package:color_twist/core/debug/developer_options.dart';
+import 'package:color_twist/core/theme/gameplay_theme.dart';
 import 'package:color_twist/features/achievements/presentation/screens/achievements_screen.dart';
 import 'package:color_twist/features/daily_challenges/presentation/widgets/daily_challenge_card.dart';
 import 'package:color_twist/features/gameplay/presentation/screens/gameplay_screen.dart';
+import 'package:color_twist/features/home/presentation/widgets/developer_options_sheet.dart';
 import 'package:color_twist/features/missions/presentation/screens/missions_screen.dart';
+import 'package:color_twist/features/store/presentation/screens/store_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onThemeChanged});
+
+  final VoidCallback? onThemeChanged;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,24 +23,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _coins = 0;
   int _dailyCardKey = 0;
+  GameplayTheme _theme = GameplayTheme.dark;
 
   @override
   void initState() {
     super.initState();
-    _loadCoins();
+    _loadData();
   }
 
-  Future<void> _loadCoins() async {
+  Future<void> _loadData() async {
     final engine = AppServices.instance.retentionEngine;
     await engine.initialize();
+    final theme = await AppServices.instance.storeService.loadTheme();
     if (mounted) {
-      setState(() => _coins = engine.coinBalance);
+      setState(() {
+        _coins = engine.coinBalance;
+        _theme = theme;
+      });
     }
   }
 
   Future<void> _refreshAfterGameplay() async {
-    await _loadCoins();
+    await _loadData();
+    widget.onThemeChanged?.call();
     setState(() => _dailyCardKey++);
+  }
+
+  Future<void> _openStore() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => StoreScreen(theme: _theme),
+      ),
+    );
+    await _loadData();
+    widget.onThemeChanged?.call();
+    if (mounted) setState(() {});
   }
 
   Future<void> _openGameplay() async {
@@ -53,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0C18),
+      backgroundColor: _theme.scaffoldColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -61,20 +84,52 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
                 children: [
-                  Text(
-                    'Color Twist',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onLongPress: DeveloperOptions.isAvailable
+                        ? () => DeveloperOptionsSheet.show(context)
+                        : null,
+                    child: Text(
+                      'Color Twist',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const Spacer(),
-                  Icon(Icons.monetization_on, color: _gold),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$_coins',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: _gold,
-                      fontWeight: FontWeight.bold,
+                  if (DeveloperOptions.isAvailable &&
+                      DeveloperOptions.unlockAllStoreItems)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: IconButton(
+                        tooltip: 'Developer options',
+                        onPressed: () => DeveloperOptionsSheet.show(context),
+                        icon: Icon(
+                          Icons.developer_mode,
+                          color: _theme.accentColor,
+                        ),
+                      ),
+                    ),
+                  InkWell(
+                    onTap: _openStore,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.monetization_on, color: _gold),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$_coins',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: _gold,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -94,6 +149,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _openStore,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Text('Store'),
+              ),
+            ),
+            const SizedBox(height: 8),
             OutlinedButton(
               onPressed: () {
                 Navigator.of(context).push(
@@ -121,7 +184,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text('Achievements'),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 8),
+            if (DeveloperOptions.isAvailable)
+              TextButton.icon(
+                onPressed: () => DeveloperOptionsSheet.show(context),
+                icon: const Icon(Icons.developer_mode, size: 18),
+                label: const Text('Developer options'),
+              ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

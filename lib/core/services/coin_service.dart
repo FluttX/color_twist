@@ -10,5 +10,9 @@ class CoinService {
 
   int get balance => _progressService.coins;
 
+  bool canAfford(int amount) => _progressService.canAfford(amount);
+
   Future<void> addCoins(int amount) => _progressService.addCoins(amount);
+
+  Future<bool> spendCoins(int amount) => _progressService.spendCoins(amount);
 }

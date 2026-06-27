@@ -6,12 +6,16 @@ class RetentionResult extends Equatable {
     this.completedMissionIds = const [],
     this.unlockedAchievementIds = const [],
     this.coinsEarned = 0,
+    this.coinsFromStars = 0,
   });
 
   final List<String> completedDailyChallengeIds;
   final List<String> completedMissionIds;
   final List<String> unlockedAchievementIds;
   final int coinsEarned;
+  final int coinsFromStars;
+
+  int get coinsFromBonuses => coinsEarned - coinsFromStars;
 
   bool get hasRewards =>
       coinsEarned > 0 ||
@@ -25,5 +29,6 @@ class RetentionResult extends Equatable {
         completedMissionIds,
         unlockedAchievementIds,
         coinsEarned,
+        coinsFromStars,
       ];
 }

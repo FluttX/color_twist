@@ -1,6 +1,7 @@
 import 'package:color_twist/features/gameplay/game/components/circle_rotator.dart';
 import 'package:color_twist/features/gameplay/game/components/color_switcher.dart';
 import 'package:color_twist/features/gameplay/game/components/player_trail.dart';
+import 'package:color_twist/features/gameplay/game/cosmetics/ball_skin_renderer.dart';
 import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -115,26 +116,16 @@ class Player extends PositionComponent
     super.render(canvas);
     final center = (size / 2).toOffset();
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.scale(_scaleX, _scaleY);
-    canvas.translate(-center.dx, -center.dy);
-
-    canvas.drawCircle(
-      center,
-      radius * 1.5,
-      Paint()
-        ..color = _color.withValues(alpha: 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    BallSkinRenderer.render(
+      canvas: canvas,
+      skinId: game.config.appearance.ballSkinId,
+      color: _color,
+      radius: radius,
+      scaleX: _scaleX,
+      scaleY: _scaleY,
+      center: center,
+      time: game.currentTime(),
     );
-
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()..color = _color,
-    );
-
-    canvas.restore();
   }
 
   void jump() {

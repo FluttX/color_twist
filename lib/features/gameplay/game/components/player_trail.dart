@@ -17,6 +17,7 @@ class PlayerTrail extends Component with HasGameReference<TwistColorGame> {
     game.particleEffects.playTrailDrip(
       player.position.clone(),
       player.currentColor,
+      style: game.config.appearance.trailId,
     );
   }
 }

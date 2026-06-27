@@ -14,6 +14,12 @@ class PlayerProgressService {
   static const _dailyProgressKey = 'daily_progress';
   static const _dailyCompleteKey = 'daily_complete';
   static const _dailyClaimedKey = 'daily_claimed';
+  static const _ownedItemsKey = 'owned_items';
+  static const _equippedBallSkinKey = 'equipped_ball_skin';
+  static const _equippedTrailKey = 'equipped_trail';
+  static const _equippedExplosionKey = 'equipped_explosion';
+  static const _equippedThemeKey = 'equipped_theme';
+  static const _equippedMusicKey = 'equipped_music';
 
   SharedPreferences? _preferences;
 
@@ -27,6 +33,12 @@ class PlayerProgressService {
   int _dailyProgress = 0;
   bool _dailyComplete = false;
   bool _dailyClaimed = false;
+  Set<String> _ownedItems = {};
+  String _equippedBallSkin = 'classic';
+  String _equippedTrail = 'drip';
+  String _equippedExplosion = 'burst';
+  String _equippedTheme = 'dark';
+  String _equippedMusic = 'default';
 
   Future<void> initialize() async {
     _preferences ??= await SharedPreferences.getInstance();
@@ -42,6 +54,12 @@ class PlayerProgressService {
     _dailyProgress = prefs.getInt(_dailyProgressKey) ?? 0;
     _dailyComplete = prefs.getBool(_dailyCompleteKey) ?? false;
     _dailyClaimed = prefs.getBool(_dailyClaimedKey) ?? false;
+    _ownedItems = (prefs.getStringList(_ownedItemsKey) ?? []).toSet();
+    _equippedBallSkin = prefs.getString(_equippedBallSkinKey) ?? 'classic';
+    _equippedTrail = prefs.getString(_equippedTrailKey) ?? 'drip';
+    _equippedExplosion = prefs.getString(_equippedExplosionKey) ?? 'burst';
+    _equippedTheme = prefs.getString(_equippedThemeKey) ?? 'dark';
+    _equippedMusic = prefs.getString(_equippedMusicKey) ?? 'default';
   }
 
   int get coins => _coins;
@@ -60,6 +78,62 @@ class PlayerProgressService {
     await initialize();
     _coins += amount;
     await _preferences!.setInt(_coinsKey, _coins);
+  }
+
+  bool canAfford(int amount) => _coins >= amount;
+
+  Future<bool> spendCoins(int amount) async {
+    if (amount <= 0) return true;
+    await initialize();
+    if (_coins < amount) return false;
+    _coins -= amount;
+    await _preferences!.setInt(_coinsKey, _coins);
+    return true;
+  }
+
+  Set<String> get ownedItems => Set.unmodifiable(_ownedItems);
+  String get equippedBallSkin => _equippedBallSkin;
+  String get equippedTrail => _equippedTrail;
+  String get equippedExplosion => _equippedExplosion;
+  String get equippedTheme => _equippedTheme;
+  String get equippedMusic => _equippedMusic;
+
+  bool isItemOwned(String itemId) => _ownedItems.contains(itemId);
+
+  Future<void> addOwnedItem(String itemId) async {
+    await initialize();
+    _ownedItems.add(itemId);
+    await _preferences!.setStringList(_ownedItemsKey, _ownedItems.toList());
+  }
+
+  Future<void> setEquippedBallSkin(String id) async {
+    await initialize();
+    _equippedBallSkin = id;
+    await _preferences!.setString(_equippedBallSkinKey, id);
+  }
+
+  Future<void> setEquippedTrail(String id) async {
+    await initialize();
+    _equippedTrail = id;
+    await _preferences!.setString(_equippedTrailKey, id);
+  }
+
+  Future<void> setEquippedExplosion(String id) async {
+    await initialize();
+    _equippedExplosion = id;
+    await _preferences!.setString(_equippedExplosionKey, id);
+  }
+
+  Future<void> setEquippedTheme(String id) async {
+    await initialize();
+    _equippedTheme = id;
+    await _preferences!.setString(_equippedThemeKey, id);
+  }
+
+  Future<void> setEquippedMusic(String id) async {
+    await initialize();
+    _equippedMusic = id;
+    await _preferences!.setString(_equippedMusicKey, id);
   }
 
   Future<void> incrementLifetimeStats({

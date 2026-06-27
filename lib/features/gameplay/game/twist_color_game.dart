@@ -31,14 +31,16 @@ class TwistColorGame extends FlameGame
   TwistColorGame({
     required this.onScoreChanged,
     required this.onGameOver,
-    this.config = const GameConfig(),
+    GameConfig? config,
     this.level = defaultLevel,
     this.levelLoader = const LevelLoader(),
     this.infiniteMode = true,
+    this.musicTrackPath,
     AudioService? audioService,
     HapticService? hapticService,
     ScoreService? scoreService,
-  })  : audioService = audioService ?? AudioService(),
+  })  : config = config ?? GameConfig(),
+        audioService = audioService ?? AudioService(),
         hapticService = hapticService ?? HapticService(),
         scoreService = scoreService ?? ScoreService(),
         super(
@@ -54,6 +56,7 @@ class TwistColorGame extends FlameGame
   final LevelDefinition level;
   final LevelLoader levelLoader;
   final bool infiniteMode;
+  final String? musicTrackPath;
   final AudioService audioService;
   final HapticService hapticService;
   final ScoreService scoreService;
@@ -160,7 +163,7 @@ class TwistColorGame extends FlameGame
       levelLoader.loadInto(world, level, obstacleFactory: obstacleFactory);
     }
 
-    audioService.playBackgroundMusic();
+    audioService.playBackgroundMusic(musicTrackPath);
   }
 
   void releaseObstacle(PositionComponent component) {

@@ -18,4 +18,6 @@ abstract final class GameConstants {
     Colors.blueAccent,
     Colors.yellowAccent,
   ];
+
+  static const int coinsPerStar = 1;
 }

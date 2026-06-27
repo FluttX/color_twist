@@ -81,4 +81,50 @@ abstract final class ParticlePresets {
     Color(0xFFFFEAA7),
     Color(0xFFDDA0DD),
   ];
+
+  static ParticlePreset trailForStyle(String trailId) => switch (trailId) {
+        'spark' => const ParticlePreset(
+            count: 4,
+            lifespan: 0.2,
+            speedMagnitude: 50,
+            accelerationMagnitude: 20,
+            priority: 12,
+          ),
+        'comet' => const ParticlePreset(
+            count: 3,
+            lifespan: 0.45,
+            speedMagnitude: 80,
+            accelerationMagnitude: 10,
+            priority: 10,
+          ),
+        _ => trailDrip,
+      };
+
+  static ParticlePreset explosionForStyle(String explosionId) => switch (explosionId) {
+        'shatter' => const ParticlePreset(
+            count: 60,
+            lifespan: 0.5,
+            speedMagnitude: 150,
+            accelerationMagnitude: 80,
+            priority: 200,
+          ),
+        'nova' => const ParticlePreset(
+            count: 35,
+            lifespan: 1.0,
+            speedMagnitude: 100,
+            accelerationMagnitude: 30,
+            priority: 200,
+          ),
+        _ => gameOverExplosion,
+      };
+
+  static List<Color> comboColorsFor(List<Color> themeColors) {
+    if (themeColors.length >= 4) return themeColors.take(4).toList();
+    return comboColors;
+  }
+
+  static List<Color> confettiColorsFor(List<Color> themeColors) {
+    if (themeColors.length >= 4) return themeColors;
+    return confettiColors;
+  }
 }

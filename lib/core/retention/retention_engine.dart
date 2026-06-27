@@ -1,3 +1,4 @@
+import 'package:color_twist/core/constants/game_constants.dart';
 import 'package:color_twist/core/retention/daily_challenge_service.dart';
 import 'package:color_twist/core/retention/models/goal_definition.dart';
 import 'package:color_twist/core/retention/models/goal_metric.dart';
@@ -60,7 +61,9 @@ class RetentionEngine {
       games: stats.gamesPlayed,
     );
 
-    var coinsEarned = 0;
+    final coinsFromStars =
+        stats.starsCollected * GameConstants.coinsPerStar;
+    var coinsEarned = coinsFromStars;
     final completedDaily = <String>[];
     final completedMissions = <String>[];
     final unlockedAchievements = <String>[];
@@ -96,6 +99,7 @@ class RetentionEngine {
       completedMissionIds: completedMissions,
       unlockedAchievementIds: unlockedAchievements,
       coinsEarned: coinsEarned,
+      coinsFromStars: coinsFromStars,
     );
   }
 

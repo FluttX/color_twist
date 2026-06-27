@@ -22,7 +22,6 @@ class DailyChallengeCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      color: const Color(0xFF1A1A2E),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -67,7 +66,7 @@ class DailyChallengeCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress.fraction,
                 minHeight: 8,
-                backgroundColor: Colors.white12,
+                backgroundColor: theme.dividerColor,
                 color: progress.isComplete ? Colors.greenAccent : _gold,
               ),
             ),
@@ -76,9 +75,7 @@ class DailyChallengeCard extends StatelessWidget {
               children: [
                 Text(
                   '${progress.current} / ${progress.target}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
+                  style: theme.textTheme.bodyMedium,
                 ),
                 const Spacer(),
                 Icon(Icons.monetization_on, color: _gold, size: 18),

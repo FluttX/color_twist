@@ -18,7 +18,6 @@ class AchievementTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      color: const Color(0xFF1A1A2E),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -26,7 +25,9 @@ class AchievementTile extends StatelessWidget {
           children: [
             Icon(
               unlocked ? Icons.emoji_events : Icons.lock_outline,
-              color: unlocked ? _gold : Colors.white38,
+              color: unlocked
+                  ? _gold
+                  : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
               size: 32,
             ),
             const SizedBox(width: 16),
@@ -38,15 +39,17 @@ class AchievementTile extends StatelessWidget {
                     achievement.title,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: unlocked ? Colors.white : Colors.white54,
+                      color: unlocked
+                          ? theme.textTheme.titleMedium?.color
+                          : theme.textTheme.bodyMedium?.color?.withValues(
+                              alpha: 0.5,
+                            ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     achievement.description,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white70,
-                    ),
+                    style: theme.textTheme.bodyMedium,
                   ),
                 ],
               ),

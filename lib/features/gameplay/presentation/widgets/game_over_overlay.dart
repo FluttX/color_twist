@@ -143,6 +143,17 @@ class _RetentionRewardsState extends State<_RetentionRewards>
     super.dispose();
   }
 
+  String _coinBreakdown(RetentionResult result) {
+    final parts = <String>[];
+    if (result.coinsFromStars > 0) {
+      parts.add('+${result.coinsFromStars} from stars');
+    }
+    if (result.coinsFromBonuses > 0) {
+      parts.add('+${result.coinsFromBonuses} from bonuses');
+    }
+    return parts.join(' · ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final result = widget.result;
@@ -180,6 +191,15 @@ class _RetentionRewardsState extends State<_RetentionRewards>
                 ),
               ],
             ),
+            if (result.coinsFromStars > 0 || result.coinsFromBonuses > 0) ...[
+              const SizedBox(height: 6),
+              Text(
+                _coinBreakdown(result),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white70,
+                    ),
+              ),
+            ],
             const SizedBox(height: 12),
           ],
           Wrap(

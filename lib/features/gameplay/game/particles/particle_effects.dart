@@ -110,8 +110,10 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
     );
   }
 
-  void playGameOverExplosion(Vector2 position, Color playerColor) {
-    final preset = ParticlePresets.gameOverExplosion;
+  void playGameOverExplosion(Vector2 position, Color playerColor, {String? explosionId}) {
+    final styleId = explosionId ?? game.config.appearance.explosionId;
+    final preset = ParticlePresets.explosionForStyle(styleId);
+    final isNova = styleId == 'nova';
 
     ParticleBurstBuilder.spawnOn(
       _world,
@@ -126,12 +128,15 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
         preset.accelerationMagnitude,
       ),
       childBuilder: (i, rnd, _) {
-        final useWhite = rnd.nextBool();
+        final useWhite = isNova || rnd.nextBool();
         final color = useWhite ? Colors.white : playerColor;
+        final particleRadius = isNova
+            ? 8 + rnd.nextDouble() * 10
+            : 5 + rnd.nextDouble() * 6;
         return ComputedParticle(
           renderer: ParticleBurstBuilder.circleRenderer(
             color: color,
-            radius: 5 + rnd.nextDouble() * 6,
+            radius: particleRadius,
             maxAlpha: 1.0,
           ),
         );
@@ -143,6 +148,7 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
     final preset = ParticlePresets.perfectCombo;
     final intensity = (comboCount / 10).clamp(1.0, 3.0);
     final count = (preset.count * intensity).round();
+    final comboColors = ParticlePresets.comboColorsFor(game.config.theme.particleColors);
 
     ParticleBurstBuilder.spawnOn(
       _world,
@@ -156,8 +162,7 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
       ),
       acceleration: (rnd) => Vector2(0, -20 - rnd.nextDouble() * 30),
       childBuilder: (i, rnd, _) {
-        final color =
-            ParticlePresets.comboColors[rnd.nextInt(ParticlePresets.comboColors.length)];
+        final color = comboColors[rnd.nextInt(comboColors.length)];
         return RotatingParticle(
           to: rnd.nextDouble() * pi,
           child: ComputedParticle(
@@ -201,6 +206,8 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
     final cameraWidth = GameConstants.cameraWidth;
     final cameraHeight = GameConstants.cameraHeight;
     final topY = -cameraHeight / 2;
+    final confettiColors =
+        ParticlePresets.confettiColorsFor(game.config.theme.particleColors);
 
     for (var i = 0; i < preset.count; i++) {
       final x = (Random().nextDouble() - 0.5) * cameraWidth;
@@ -218,8 +225,7 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
         ),
         acceleration: (rnd) => Vector2(0, preset.accelerationMagnitude),
         childBuilder: (index, rnd, _) {
-          final color = ParticlePresets.confettiColors[
-              rnd.nextInt(ParticlePresets.confettiColors.length)];
+          final color = confettiColors[rnd.nextInt(confettiColors.length)];
           final isRect = rnd.nextBool();
           if (isRect) {
             return RotatingParticle(
@@ -253,8 +259,10 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
     }
   }
 
-  void playTrailDrip(Vector2 position, Color color) {
-    final preset = ParticlePresets.trailDrip;
+  void playTrailDrip(Vector2 position, Color color, {String style = 'drip'}) {
+    final preset = ParticlePresets.trailForStyle(style);
+    final isComet = style == 'comet';
+    final isSpark = style == 'spark';
 
     ParticleBurstBuilder.spawnOn(
       _world,
@@ -262,17 +270,34 @@ class ParticleEffects extends Component with HasGameReference<TwistColorGame> {
       count: preset.count,
       lifespan: preset.lifespan,
       priority: preset.priority,
-      speed: (random) => Vector2(
-        (random.nextDouble() - 0.5) * 20,
-        40 + random.nextDouble() * 30,
+      speed: (random) {
+        if (isComet) {
+          return Vector2(
+            (random.nextDouble() - 0.5) * 10,
+            60 + random.nextDouble() * 40,
+          );
+        }
+        if (isSpark) {
+          return Vector2(
+            (random.nextDouble() - 0.5) * 60,
+            (random.nextDouble() - 0.5) * 60,
+          );
+        }
+        return Vector2(
+          (random.nextDouble() - 0.5) * 20,
+          40 + random.nextDouble() * 30,
+        );
+      },
+      acceleration: (_) => Vector2(
+        0,
+        isSpark ? 20 : preset.accelerationMagnitude,
       ),
-      acceleration: (_) => Vector2(0, preset.accelerationMagnitude),
       childBuilder: (i, random, _) {
         return ComputedParticle(
           renderer: ParticleBurstBuilder.circleRenderer(
-            color: color,
-            radius: 3,
-            maxAlpha: 0.6,
+            color: isSpark ? Colors.white : color,
+            radius: isComet ? 4 : (isSpark ? 2 : 3),
+            maxAlpha: isSpark ? 0.9 : 0.6,
             minScale: 0.5,
           ),
         );

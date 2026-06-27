@@ -1,6 +1,8 @@
 import 'package:color_twist/features/gameplay/models/game_status.dart';
 import 'package:color_twist/app/app_services.dart';
 import 'package:color_twist/core/retention/retention_engine.dart';
+import 'package:color_twist/core/theme/app_theme.dart';
+import 'package:color_twist/core/theme/gameplay_theme.dart';
 import 'package:color_twist/features/gameplay/presentation/cubit/game_cubit.dart';
 import 'package:color_twist/features/gameplay/presentation/cubit/game_state.dart';
 import 'package:color_twist/features/gameplay/presentation/widgets/game_hud.dart';
@@ -17,23 +19,26 @@ class GameplayScreen extends StatelessWidget {
 
   final RetentionEngine? retentionEngine;
 
-  static const _edgeToEdgeOverlay = SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.light,
-    systemNavigationBarContrastEnforced: false,
-  );
-
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GameCubit(
+    return FutureBuilder<GameCubit>(
+      future: GameCubit.create(
         scoreService: AppServices.instance.scoreService,
         retentionEngine: retentionEngine ?? AppServices.instance.retentionEngine,
+        storeService: AppServices.instance.storeService,
       ),
-      child: const _GameplayView(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return BlocProvider.value(
+          value: snapshot.data!,
+          child: const _GameplayView(),
+        );
+      },
     );
   }
 }
@@ -50,7 +55,19 @@ class _GameplayViewState extends State<_GameplayView> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(GameplayScreen._edgeToEdgeOverlay);
+  }
+
+  SystemUiOverlayStyle _overlayStyle(GameplayTheme theme) {
+    final isLight = theme.statusBarBrightness == Brightness.light;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isLight ? Brightness.dark : Brightness.light,
+      statusBarBrightness: isLight ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness:
+          isLight ? Brightness.dark : Brightness.light,
+      systemNavigationBarContrastEnforced: false,
+    );
   }
 
   @override
@@ -64,53 +81,59 @@ class _GameplayViewState extends State<_GameplayView> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: GameplayScreen._edgeToEdgeOverlay,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0C0C18),
-        extendBody: true,
-        extendBodyBehindAppBar: true,
-        body: BlocBuilder<GameCubit, GameState>(
-          builder: (context, state) {
-            final game = context.read<GameCubit>().game;
+    return BlocBuilder<GameCubit, GameState>(
+      builder: (context, state) {
+        final game = context.read<GameCubit>().game;
+        final theme = game.config.theme;
+        final overlayStyle = _overlayStyle(theme);
 
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                MediaQuery.removePadding(
-                  context: context,
-                  removeTop: true,
-                  removeBottom: true,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Positioned.fill(
-                        child: GameplayParallaxBackground(
-                          cameraYListenable: game.cameraYNotifier,
-                          driftListenable: game.backgroundDriftNotifier,
+        return Theme(
+          data: AppTheme.forGameplayTheme(theme),
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: overlayStyle,
+            child: Scaffold(
+              backgroundColor: theme.scaffoldColor,
+              extendBody: true,
+              extendBodyBehindAppBar: true,
+              body: Stack(
+                fit: StackFit.expand,
+                children: [
+                  MediaQuery.removePadding(
+                    context: context,
+                    removeTop: true,
+                    removeBottom: true,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Positioned.fill(
+                          child: GameplayParallaxBackground(
+                            cameraYListenable: game.cameraYNotifier,
+                            driftListenable: game.backgroundDriftNotifier,
+                            theme: theme,
+                          ),
                         ),
-                      ),
-                      Positioned.fill(
-                        child: GameWidget(
-                          game: game,
-                          backgroundBuilder: (context) =>
-                              const ColoredBox(color: Colors.transparent),
+                        Positioned.fill(
+                          child: GameWidget(
+                            game: game,
+                            backgroundBuilder: (context) =>
+                                const ColoredBox(color: Colors.transparent),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                if (state.status == GameStatus.playing)
-                  const Positioned.fill(child: GameHud()),
-                if (state.status == GameStatus.paused)
-                  const Positioned.fill(child: PauseOverlay()),
-                if (state.status == GameStatus.gameOver)
-                  const Positioned.fill(child: GameOverOverlay()),
-              ],
-            );
-          },
-        ),
-      ),
+                  if (state.status == GameStatus.playing)
+                    const Positioned.fill(child: GameHud()),
+                  if (state.status == GameStatus.paused)
+                    const Positioned.fill(child: PauseOverlay()),
+                  if (state.status == GameStatus.gameOver)
+                    const Positioned.fill(child: GameOverOverlay()),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

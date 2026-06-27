@@ -2,23 +2,51 @@ import 'package:color_twist/core/retention/models/run_stats.dart';
 import 'package:color_twist/core/retention/retention_engine.dart';
 import 'package:color_twist/core/services/score_service.dart';
 import 'package:color_twist/features/gameplay/game/twist_color_game.dart';
+import 'package:color_twist/features/gameplay/models/game_config.dart';
 import 'package:color_twist/features/gameplay/models/game_status.dart';
 import 'package:color_twist/features/gameplay/presentation/cubit/game_state.dart';
+import 'package:color_twist/features/store/services/store_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GameCubit extends Cubit<GameState> {
-  GameCubit({
-    ScoreService? scoreService,
-    RetentionEngine? retentionEngine,
-  })  : _scoreService = scoreService ?? ScoreService(),
-        _retentionEngine = retentionEngine ?? RetentionEngine(),
+  GameCubit._({
+    required ScoreService scoreService,
+    required RetentionEngine retentionEngine,
+    required GameConfig config,
+    required String musicTrackPath,
+  })  : _scoreService = scoreService,
+        _retentionEngine = retentionEngine,
         super(const GameState()) {
     _game = TwistColorGame(
       onScoreChanged: _onScoreChanged,
       onGameOver: _onGameOver,
       scoreService: _scoreService,
+      config: config,
+      musicTrackPath: musicTrackPath,
     );
     _loadHighScore();
+  }
+
+  static Future<GameCubit> create({
+    required ScoreService scoreService,
+    required RetentionEngine retentionEngine,
+    required StoreService storeService,
+  }) async {
+    await storeService.initialize();
+    final appearance = await storeService.loadAppearance();
+    final theme = await storeService.loadTheme();
+    final musicTrackPath = await storeService.loadMusicTrackPath();
+    final config = GameConfig(
+      gameColors: theme.gameColors,
+      appearance: appearance,
+      theme: theme,
+    );
+    return GameCubit._(
+      scoreService: scoreService,
+      retentionEngine: retentionEngine,
+      config: config,
+      musicTrackPath: musicTrackPath,
+    );
   }
 
   final ScoreService _scoreService;

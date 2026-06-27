@@ -19,7 +19,6 @@ class MissionTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      color: const Color(0xFF1A1A2E),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -43,9 +42,7 @@ class MissionTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               mission.description,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white70,
-              ),
+              style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
             ClipRRect(
@@ -53,7 +50,7 @@ class MissionTile extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress.fraction,
                 minHeight: 8,
-                backgroundColor: Colors.white12,
+                backgroundColor: theme.dividerColor,
                 color: progress.isComplete ? Colors.greenAccent : _gold,
               ),
             ),
@@ -62,9 +59,7 @@ class MissionTile extends StatelessWidget {
               children: [
                 Text(
                   '${progress.current} / ${progress.target}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white70,
-                  ),
+                  style: theme.textTheme.bodySmall,
                 ),
                 const Spacer(),
                 Icon(Icons.monetization_on, color: _gold, size: 16),

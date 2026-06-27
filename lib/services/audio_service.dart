@@ -2,13 +2,22 @@ import 'package:color_twist/core/constants/asset_paths.dart';
 import 'package:flame_audio/flame_audio.dart';
 
 class AudioService {
+  String _currentTrack = AssetPaths.backgroundMusic;
+
   Future<void> initialize() async {
     await FlameAudio.bgm.initialize();
     await FlameAudio.audioCache.loadAll(AssetPaths.audio);
   }
 
-  void playBackgroundMusic() {
-    FlameAudio.bgm.play(AssetPaths.backgroundMusic);
+  void playBackgroundMusic([String? trackPath]) {
+    final track = trackPath ?? _currentTrack;
+    _currentTrack = track;
+    FlameAudio.bgm.play(track);
+  }
+
+  void setMusicTrack(String trackPath) {
+    _currentTrack = trackPath;
+    stopBackgroundMusic();
   }
 
   void pauseBackgroundMusic() {
